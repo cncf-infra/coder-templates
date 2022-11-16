@@ -23,6 +23,7 @@ rules:
       - "controlplane.cluster.x-k8s.io"
       - "infrastructure.cluster.x-k8s.io"
       - "addons.cluster.x-k8s.io"
+      - "cdi.kubevirt.io"
     resources:
       - "namespaces"
       - "configmaps"
@@ -35,6 +36,7 @@ rules:
       - "clusterresourcesets"
       - "kubeadmconfigtemplates"
       - "kubeadmcontrolplanes"
+      - "datavolumes"
     verbs:
       - "list"
       - "get"

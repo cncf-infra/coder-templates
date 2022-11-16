@@ -298,9 +298,6 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
       "template" = {
         "spec" = {
           "virtualMachineTemplate" = {
-            "metadata" = {
-              "namespace" = data.coder_workspace.me.name
-            }
             "spec" = {
               "runStrategy" = "Always"
               "template" = {
@@ -326,8 +323,8 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
                   "evictionStrategy" = "External"
                   "volumes" = [
                     {
-                      "containerDisk" = {
-                        "image" = "quay.io/capk/ubuntu-2004-container-disk:v1.22.0"
+                      "persistentVolumeClaim" = {
+                        "claimName" = data.coder_workspace.me.name
                       }
                       "name" = "containervolume"
                     },
@@ -342,7 +339,8 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
   }
 
   depends_on = [
-    kubernetes_namespace.workspace
+    kubernetes_namespace.workspace,
+    kubernetes_manifest.vm-data-volume
   ]
 }
 
@@ -647,4 +645,30 @@ resource "coder_metadata" "kubeconfig" {
     data.kubernetes_secret_v1.kubeconfig,
     time_sleep.wait_50_seconds
   ]
+}
+
+resource "kubernetes_manifest" "vm-data-volume" {
+  manifest = {
+    "apiVersion" = "cdi.kubevirt.io/v1beta1"
+    "kind"       = "DataVolume"
+    "metadata" = {
+      "name"      = data.coder_workspace.me.name
+      "namespace" = data.coder_workspace.me.name
+    }
+    "spec" = {
+      "source" = {
+        "registry" = {
+          "url" = "docker://quay.io/capk/ubuntu-2004-container-disk:v1.22.0"
+        }
+      }
+      "pvc" = {
+        "accessModes" = ["ReadWriteOnce"]
+        "resources" = {
+          "requests" = {
+            "storage" = "30Gi"
+          }
+        }
+      }
+    }
+  }
 }
