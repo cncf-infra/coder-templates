@@ -211,7 +211,7 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
                       "accessModes" = ["ReadWriteOnce"]
                       "resources" = {
                         "requests" = {
-                          "storage" = "500Gi"
+                          "storage" = "80Gi"
                         }
                       }
                     }
@@ -369,7 +369,7 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
                       "accessModes" = ["ReadWriteOnce"]
                       "resources" = {
                         "requests" = {
-                          "storage" = "500Gi"
+                          "storage" = "80Gi"
                         }
                       }
                     }
