@@ -1,0 +1,39 @@
+on: issue_comment
+
+jobs:
+  pr_commented:
+    # This job only runs for pull request comments
+    name: PR comment
+    if: ${{ github.event.issue.pull_request }}
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Prow Github Actions for PR comment"
+        env:
+            NUMBER: ${{ github.event.issue.number }}
+            REPO_OAUTH_TOKEN : ${{ github.token }}
+            UNSPLASH_ACCESS_KEY : ${{ secrets.UNSPLASH_ACCESS_KEY }}
+        uses: docker://ghcr.io/cncf-infra/prow-github-action:latest
+      - name: "Capture runtime artefacts for development on pga"
+        uses: actions/upload-artifact@v3
+        with:
+          name: environment variables and event payload
+          path: ${{ github.workspace }}
+  issue_commented:
+    # This job only runs for issue comments
+    name: Issue comment
+    if: ${{ !github.event.issue.pull_request }}
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Prow Github Actions for Issue Comment"
+        env:
+          NUMBER: ${{ github.event.issue.number }}
+          REPO_OAUTH_TOKEN : ${{ github.token }}
+          UNSPLASH_ACCESS_KEY : ${{ secrets.UNSPLASH_ACCESS_KEY }}
+        uses: docker://ghcr.io/cncf-infra/prow-github-action:latest
+      - name: "Capture runtime artefacts for development on pga"
+        uses: actions/upload-artifact@v3
+        with:
+          name: environment variables and event payload
+          path: ${{ github.workspace }}
