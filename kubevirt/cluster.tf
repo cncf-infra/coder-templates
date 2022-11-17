@@ -195,6 +195,29 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
             }
             "spec" = {
               "runStrategy" = "Always"
+              "dataVolumeTemplates" = [
+                {
+                  "metadata" = {
+                    "name"      = "${data.coder_workspace.me.name}-cp-dv"
+                    "namespace" = data.coder_workspace.me.name
+                  }
+                  "spec" = {
+                    "source" = {
+                      "registry" = {
+                        "url" = "docker://quay.io/capk/ubuntu-2004-container-disk:v1.22.0"
+                      }
+                    }
+                    "pvc" = {
+                      "accessModes" = ["ReadWriteOnce"]
+                      "resources" = {
+                        "requests" = {
+                          "storage" = "500Gi"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
               "template" = {
                 "spec" = {
                   "domain" = {
@@ -218,8 +241,8 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
                   "evictionStrategy" = "External"
                   "volumes" = [
                     {
-                      "containerDisk" = {
-                        "image" = "quay.io/capk/ubuntu-2004-container-disk:v1.22.0"
+                      "persistentVolumeClaim" = {
+                        "claimName" = "${data.coder_workspace.me.name}-cp-dv"
                       }
                       "name" = "containervolume"
                     },
@@ -330,6 +353,29 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
           "virtualMachineTemplate" = {
             "spec" = {
               "runStrategy" = "Always"
+              "dataVolumeTemplates" = [
+                {
+                  "metadata" = {
+                    "name"      = "${data.coder_workspace.me.name}-dv"
+                    "namespace" = data.coder_workspace.me.name
+                  }
+                  "spec" = {
+                    "source" = {
+                      "registry" = {
+                        "url" = "docker://quay.io/capk/ubuntu-2004-container-disk:v1.22.0"
+                      }
+                    }
+                    "pvc" = {
+                      "accessModes" = ["ReadWriteOnce"]
+                      "resources" = {
+                        "requests" = {
+                          "storage" = "500Gi"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
               "template" = {
                 "spec" = {
                   "domain" = {
