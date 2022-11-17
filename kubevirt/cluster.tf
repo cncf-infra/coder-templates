@@ -183,7 +183,7 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
     "apiVersion" = "infrastructure.cluster.x-k8s.io/v1alpha1"
     "kind"       = "KubevirtMachineTemplate"
     "metadata" = {
-      "name"      = data.coder_workspace.me.name
+      "name"      = "${data.coder_workspace.me.name}-cp"
       "namespace" = data.coder_workspace.me.name
     }
     "spec" = {
@@ -272,12 +272,42 @@ resource "kubernetes_manifest" "kubeadmcontrolplane_control_plane" {
         "infrastructureRef" = {
           "apiVersion" = "infrastructure.cluster.x-k8s.io/v1alpha1"
           "kind"       = "KubevirtMachineTemplate"
-          "name"       = data.coder_workspace.me.name
+          "name"       = "${data.coder_workspace.me.name}-cp"
           "namespace"  = data.coder_workspace.me.name
         }
       }
       "replicas" = 1
       "version"  = "v1.23.5"
+    }
+  }
+
+  depends_on = [
+    kubernetes_namespace.workspace
+  ]
+}
+
+resource "kubernetes_manifest" "vm-data-volume" {
+  manifest = {
+    "apiVersion" = "cdi.kubevirt.io/v1beta1"
+    "kind"       = "DataVolume"
+    "metadata" = {
+      "name"      = "${data.coder_workspace.me.name}-dv"
+      "namespace" = data.coder_workspace.me.name
+    }
+    "spec" = {
+      "source" = {
+        "registry" = {
+          "url" = "docker://quay.io/capk/ubuntu-2004-container-disk:v1.22.0"
+        }
+      }
+      "pvc" = {
+        "accessModes" = ["ReadWriteOnce"]
+        "resources" = {
+          "requests" = {
+            "storage" = "30Gi"
+          }
+        }
+      }
     }
   }
 
@@ -324,7 +354,7 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
                   "volumes" = [
                     {
                       "persistentVolumeClaim" = {
-                        "claimName" = data.coder_workspace.me.name
+                        "claimName" = "${data.coder_workspace.me.name}-dv"
                       }
                       "name" = "containervolume"
                     },
@@ -647,28 +677,3 @@ resource "coder_metadata" "kubeconfig" {
   ]
 }
 
-resource "kubernetes_manifest" "vm-data-volume" {
-  manifest = {
-    "apiVersion" = "cdi.kubevirt.io/v1beta1"
-    "kind"       = "DataVolume"
-    "metadata" = {
-      "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
-    }
-    "spec" = {
-      "source" = {
-        "registry" = {
-          "url" = "docker://quay.io/capk/ubuntu-2004-container-disk:v1.22.0"
-        }
-      }
-      "pvc" = {
-        "accessModes" = ["ReadWriteOnce"]
-        "resources" = {
-          "requests" = {
-            "storage" = "30Gi"
-          }
-        }
-      }
-    }
-  }
-}
