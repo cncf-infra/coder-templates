@@ -78,13 +78,9 @@ resource "coder_app" "code-server" {
   # }
 }
 
-resource "kubernetes_namespace" "workspace" {
-  count = data.coder_workspace.me.start_count
+data "kubernetes_namespace" "workspace" {
   metadata {
-    name = data.coder_workspace.me.name
-    labels = {
-      cert-manager-tls = "sync"
-    }
+    name = "coder-workspaces"
   }
 }
 
@@ -94,7 +90,7 @@ resource "kubernetes_manifest" "cluster" {
     "kind"       = "Cluster"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
       "labels" = {
         "cluster-name" = data.coder_workspace.me.name
       }
@@ -104,13 +100,13 @@ resource "kubernetes_manifest" "cluster" {
         "apiVersion" = "controlplane.cluster.x-k8s.io/v1beta1"
         "kind"       = "KubeadmControlPlane"
         "name"       = data.coder_workspace.me.name
-        "namespace"  = data.coder_workspace.me.name
+        "namespace"  = data.kubernetes_namespace.workspace.metadata.name
       }
       "infrastructureRef" = {
         "apiVersion" = "infrastructure.cluster.x-k8s.io/v1alpha1"
         "kind"       = "KubevirtCluster"
         "name"       = data.coder_workspace.me.name
-        "namespace"  = data.coder_workspace.me.name
+        "namespace"  = data.kubernetes_namespace.workspace.metadata.name
       }
       "clusterNetwork" = {
         "pods" = {
@@ -138,7 +134,7 @@ resource "kubernetes_manifest" "kvcluster" {
     "kind"       = "KubevirtCluster"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
     }
     "spec" = {
       "controlPlaneServiceTemplate" = {
@@ -184,14 +180,14 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
     "kind"       = "KubevirtMachineTemplate"
     "metadata" = {
       "name"      = "${data.coder_workspace.me.name}-cp"
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
     }
     "spec" = {
       "template" = {
         "spec" = {
           "virtualMachineTemplate" = {
             "metadata" = {
-              "namespace" = data.coder_workspace.me.name
+              "namespace" = data.kubernetes_namespace.workspace.metadata.name
             }
             "spec" = {
               "runStrategy" = "Always"
@@ -199,7 +195,7 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
                 {
                   "metadata" = {
                     "name"      = "${data.coder_workspace.me.name}-cp-dv"
-                    "namespace" = data.coder_workspace.me.name
+                    "namespace" = data.kubernetes_namespace.workspace.metadata.name
                   }
                   "spec" = {
                     "source" = {
@@ -267,7 +263,7 @@ resource "kubernetes_manifest" "kubeadmcontrolplane_control_plane" {
     "kind"       = "KubeadmControlPlane"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
     }
     "spec" = {
       "kubeadmConfigSpec" = {
@@ -287,6 +283,9 @@ resource "kubernetes_manifest" "kubeadmcontrolplane_control_plane" {
             "criSocket" = "{CRI_PATH}"
           }
         }
+        "preKubeadmCommands" = [
+          "echo 'export KUBERNETES_CONTROLPLANE_ENDPOINT={{ .controlPlaneEndpoint }}' >> /root/.sharing-io-pair-init.env"
+        ]
         "postKubeadmCommands" = [
           "kubectl --kubeconfig=/etc/kubernetes/admin.conf taint nodes --all node-role.kubernetes.io/master-"
         ]
@@ -296,7 +295,7 @@ resource "kubernetes_manifest" "kubeadmcontrolplane_control_plane" {
           "apiVersion" = "infrastructure.cluster.x-k8s.io/v1alpha1"
           "kind"       = "KubevirtMachineTemplate"
           "name"       = "${data.coder_workspace.me.name}-cp"
-          "namespace"  = data.coder_workspace.me.name
+          "namespace"  = data.kubernetes_namespace.workspace.metadata.name
         }
       }
       "replicas" = 1
@@ -315,7 +314,7 @@ resource "kubernetes_manifest" "vm-data-volume" {
     "kind"       = "DataVolume"
     "metadata" = {
       "name"      = "${data.coder_workspace.me.name}-dv"
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
     }
     "spec" = {
       "source" = {
@@ -345,7 +344,7 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
     "kind"       = "KubevirtMachineTemplate"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
     }
     "spec" = {
       "template" = {
@@ -357,7 +356,7 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
                 {
                   "metadata" = {
                     "name"      = "${data.coder_workspace.me.name}-dv"
-                    "namespace" = data.coder_workspace.me.name
+                    "namespace" = data.kubernetes_namespace.workspace.metadata.name
                   }
                   "spec" = {
                     "source" = {
@@ -426,7 +425,7 @@ resource "kubernetes_manifest" "kubeadmconfigtemplate_md_0" {
     "kind"       = "KubeadmConfigTemplate"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
     }
     # "spec" = {
     #   "template" = {
@@ -453,7 +452,7 @@ resource "kubernetes_manifest" "machinedeployment_md_0" {
     "kind"       = "MachineDeployment"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
     }
     "spec" = {
       "clusterName" = data.coder_workspace.me.name
@@ -468,7 +467,7 @@ resource "kubernetes_manifest" "machinedeployment_md_0" {
               "apiVersion" = "bootstrap.cluster.x-k8s.io/v1beta1"
               "kind"       = "KubeadmConfigTemplate"
               "name"       = data.coder_workspace.me.name
-              "namespace"  = data.coder_workspace.me.name
+              "namespace"  = data.kubernetes_namespace.workspace.metadata.name
             }
           }
           "clusterName" = "kv1"
@@ -476,7 +475,7 @@ resource "kubernetes_manifest" "machinedeployment_md_0" {
             "apiVersion" = "infrastructure.cluster.x-k8s.io/v1alpha1"
             "kind"       = "KubevirtMachineTemplate"
             "name"       = data.coder_workspace.me.name
-            "namespace"  = data.coder_workspace.me.name
+            "namespace"  = data.kubernetes_namespace.workspace.metadata.name
           }
           "version" = "v1.23.5"
         }
@@ -494,7 +493,7 @@ resource "kubernetes_manifest" "configmap_capi_init" {
     "kind" = "ConfigMap"
     "metadata" = {
       "name"      = "capi-init"
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
     }
     "apiVersion" = "v1"
     "data" = {
@@ -532,7 +531,7 @@ resource "kubernetes_manifest" "configmap_capi_init" {
 #     "kind" = "Secret"
 #     "metadata" = {
 #       "name"      = "vcluster-kubeconfig"
-#       "namespace" = data.coder_workspace.me.name
+#       "namespace" = data.kubernetes_namespace.workspace.metadata.name
 #     }
 #     "apiVersion" = "v1"
 #     "type"       = "addons.cluster.x-k8s.io/resource-set"
@@ -565,7 +564,7 @@ resource "kubernetes_manifest" "clusterresourceset_capi_init" {
     "kind"       = "ClusterResourceSet"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata.name
     }
     "spec" = {
       "clusterSelector" = {
@@ -616,7 +615,7 @@ resource "kubernetes_manifest" "clusterresourceset_capi_init" {
 #     "kind"       = "HTTPProxy"
 #     "metadata" = {
 #       "name"      = "${data.coder_workspace.me.name}-apiserver"
-#       "namespace" = data.coder_workspace.me.name
+#       "namespace" = data.kubernetes_namespace.workspace.metadata.name
 #       "annotations" = {
 #         "projectcontour.io/ingress.class" = "contour-external"
 #       }
