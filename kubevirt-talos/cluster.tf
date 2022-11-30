@@ -103,12 +103,12 @@ resource "kubernetes_manifest" "cluster" {
       "clusterNetwork" = {
         "pods" = {
           "cidrBlocks" = [
-            "192.168.0.0/16",
+            "10.244.0.0/16",
           ]
         }
         "services" = {
           "cidrBlocks" = [
-            "172.26.0.0/16",
+            "10.96.0.0/12",
           ]
         }
       }
@@ -167,7 +167,7 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
                     }
                     "source" = {
                       "registry" = {
-                        "url" = "docker://docker.io/katamo/talos:latest"
+                        "url" = "docker://quay.io/containercraft/talos/nocloud@sha256:4b68854f63b15fa2ebd57b53dc293ce17babb6a0f2d77373cdc30e964bb65ca3"
                       }
                     }
                   }
@@ -180,21 +180,50 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
                       "cores" = 2
                     }
                     "devices" = {
+                      "autoattachGraphicsDevice" = false
+                      "autoattachPodInterface"   = true
+                      "autoattachSerialConsole"  = true
+                      "interfaces" = [
+                        {
+                          "name"   = "default"
+                          "bridge" = {}
+                        }
+                      ]
                       "disks" = [
                         {
                           "disk" = {
                             "bus" = "scsi"
                           }
-                          "name" = "vmdisk"
+                          "bootOrder" = 1
+                          "name"      = "vmdisk"
                         },
                       ]
+                      "rng" = {}
                     }
                     "memory" = {
                       "guest" = "4Gi"
                     }
                   }
                   "evictionStrategy" = "External"
+                  "networks" = [
+                    {
+                      "name" = "default"
+                      "pod"  = {}
+                    }
+                  ]
                   "volumes" = [
+                    {
+                      "cloudInitNoCloud" = {
+                        "networkData" = <<-EOF
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true
+EOF
+                      }
+                      "name" = "cloudinitvolume"
+                    },
                     {
                       "dataVolume" = {
                         "name" = "vmdisk-dv"
@@ -363,7 +392,7 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
                     }
                     "source" = {
                       "registry" = {
-                        "url" = "docker://docker.io/katamo/talos:latest"
+                        "url" = "docker://quay.io/containercraft/talos/nocloud@sha256:4b68854f63b15fa2ebd57b53dc293ce17babb6a0f2d77373cdc30e964bb65ca3"
                       }
                     }
                   }
@@ -372,22 +401,19 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
               "template" = {
                 "spec" = {
                   "domain" = {
-                    # "firmware" = {
-                    #   "kernelBoot" = {
-                    #     "container" = {
-                    #       "image"           = "ghcr.io/siderolabs/installer:v1.2.5"
-                    #       "initrdPath"      = "/usr/install/amd64/initramfs.xz"
-                    #       "kernelPath"      = "/usr/install/amd64/vmlinuz"
-                    #       "imagePullPolicy" = "Always"
-                    #       "imagePullSecret" = "IfNotPresent"
-                    #     }
-                    #     "kernelArgs" = "console=ttyS0"
-                    #   }
-                    # }
                     "cpu" = {
                       "cores" = 2
                     }
                     "devices" = {
+                      "autoattachGraphicsDevice" = false
+                      "autoattachPodInterface"   = true
+                      "autoattachSerialConsole"  = true
+                      "interfaces" = [
+                        {
+                          "name"   = "default"
+                          "bridge" = {}
+                        }
+                      ]
                       "disks" = [
                         {
                           "disk" = {
@@ -396,13 +422,32 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
                           "name" = "vmdisk"
                         },
                       ]
+                      "rng" = {}
                     }
                     "memory" = {
                       "guest" = "4Gi"
                     }
                   }
                   "evictionStrategy" = "External"
+                  "networks" = [
+                    {
+                      "name" = "default"
+                      "pod"  = {}
+                    }
+                  ]
                   "volumes" = [
+                    {
+                      "cloudInitNoCloud" = {
+                        "networkData" = <<-EOF
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true
+EOF
+                      }
+                      "name" = "cloudinitvolume"
+                    },
                     {
                       "dataVolume" = {
                         "name" = "vmdisk-dv"
