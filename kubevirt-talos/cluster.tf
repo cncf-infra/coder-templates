@@ -67,12 +67,10 @@ resource "coder_app" "code-server" {
   }
 }
 
-resource "kubernetes_namespace" "workspace" {
+data "kubernetes_namespace" "workspace" {
+  # count = data.coder_workspace.me.start_count
   metadata {
-    name = data.coder_workspace.me.name
-    labels = {
-      cert-manager-tls = "sync"
-    }
+    name = "coder-workspaces"
   }
 }
 
@@ -82,7 +80,7 @@ resource "kubernetes_manifest" "cluster" {
     "kind"       = "Cluster"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
       "labels" = {
         "cluster-name" = data.coder_workspace.me.name
       }
@@ -92,13 +90,13 @@ resource "kubernetes_manifest" "cluster" {
         "apiVersion" = "controlplane.cluster.x-k8s.io/v1beta1"
         "kind"       = "TalosControlPlane"
         "name"       = data.coder_workspace.me.name
-        "namespace"  = data.coder_workspace.me.name
+        "namespace"  = data.kubernetes_namespace.workspace.metadata[0].name
       }
       "infrastructureRef" = {
         "apiVersion" = "infrastructure.cluster.x-k8s.io/v1alpha1"
         "kind"       = "KubevirtCluster"
         "name"       = data.coder_workspace.me.name
-        "namespace"  = data.coder_workspace.me.name
+        "namespace"  = data.kubernetes_namespace.workspace.metadata[0].name
       }
       "clusterNetwork" = {
         "pods" = {
@@ -122,7 +120,7 @@ resource "kubernetes_manifest" "kvcluster" {
     "kind"       = "KubevirtCluster"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
     }
     "spec" = {
       "controlPlaneServiceTemplate" = {
@@ -140,14 +138,14 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
     "kind"       = "KubevirtMachineTemplate"
     "metadata" = {
       "name"      = "${data.coder_workspace.me.name}-cp"
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
     }
     "spec" = {
       "template" = {
         "spec" = {
           "virtualMachineTemplate" = {
             "metadata" = {
-              "namespace" = data.coder_workspace.me.name
+              "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
             }
             "spec" = {
               "runStrategy" = "Always"
@@ -180,9 +178,6 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
                       "cores" = 2
                     }
                     "devices" = {
-                      "autoattachGraphicsDevice" = false
-                      "autoattachPodInterface"   = true
-                      "autoattachSerialConsole"  = true
                       "interfaces" = [
                         {
                           "name"   = "default"
@@ -213,16 +208,8 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_control_plane" {
                   ]
                   "volumes" = [
                     {
-                      "cloudInitNoCloud" = {
-                        "networkData" = <<-EOF
-network:
-  version: 2
-  ethernets:
-    eth0:
-      dhcp4: true
-EOF
-                      }
-                      "name" = "cloudinitvolume"
+                      "cloudInitNoCloud" = {}
+                      "name"             = "cloudinitvolume"
                     },
                     {
                       "dataVolume" = {
@@ -247,7 +234,7 @@ resource "kubernetes_manifest" "taloscontrolplane_talos_em_control_plane" {
     "kind"       = "TalosControlPlane"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
     }
     "spec" = {
       "controlPlaneConfig" = {
@@ -259,17 +246,24 @@ resource "kubernetes_manifest" "taloscontrolplane_talos_em_control_plane" {
               "path"  = "/debug"
               "value" = true
             },
-            # {
-            #   "op"   = "replace"
-            #   "path" = "/machine/install"
-            #   "value" = {
-            #     "bootloader"      = true
-            #     "wipe"            = false
-            #     "disk"            = "/dev/sda"
-            #     "image"           = "ghcr.io/siderolabs/installer:v1.2.5"
-            #     "extraKernelArgs" = ["console=ttyS0"]
-            #   }
-            # },
+            {
+              "op"   = "add"
+              "path" = "/machine/network"
+              "value" = {
+                "nameservers" = ["8.8.8.8", "1.1.1.1"]
+              }
+            },
+            {
+              "op"   = "replace"
+              "path" = "/machine/install"
+              "value" = {
+                "bootloader"      = true
+                "wipe"            = false
+                "disk"            = "/dev/sda"
+                "image"           = "ghcr.io/siderolabs/installer:v1.2.5"
+                "extraKernelArgs" = ["console=ttyS0"]
+              }
+            },
             # {
             #   "op"   = "add"
             #   "path" = "/machine/kubelet/extraArgs"
@@ -315,6 +309,13 @@ resource "kubernetes_manifest" "taloscontrolplane_talos_em_control_plane" {
               "op"    = "add"
               "path"  = "/debug"
               "value" = true
+            },
+            {
+              "op"   = "add"
+              "path" = "/machine/network"
+              "value" = {
+                "nameservers" = ["8.8.8.8", "1.1.1.1"]
+              }
             },
             # {
             #   "op"   = "add"
@@ -363,14 +364,14 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
     "kind"       = "KubevirtMachineTemplate"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
     }
     "spec" = {
       "template" = {
         "spec" = {
           "virtualMachineTemplate" = {
             "metadata" = {
-              "namespace" = data.coder_workspace.me.name
+              "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
             }
             "spec" = {
               "runStrategy" = "Always"
@@ -405,9 +406,6 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
                       "cores" = 2
                     }
                     "devices" = {
-                      "autoattachGraphicsDevice" = false
-                      "autoattachPodInterface"   = true
-                      "autoattachSerialConsole"  = true
                       "interfaces" = [
                         {
                           "name"   = "default"
@@ -437,16 +435,8 @@ resource "kubernetes_manifest" "kubevirtmachinetemplate_md_0" {
                   ]
                   "volumes" = [
                     {
-                      "cloudInitNoCloud" = {
-                        "networkData" = <<-EOF
-network:
-  version: 2
-  ethernets:
-    eth0:
-      dhcp4: true
-EOF
-                      }
-                      "name" = "cloudinitvolume"
+                      "cloudInitNoCloud" = {}
+                      "name"             = "cloudinitvolume"
                     },
                     {
                       "dataVolume" = {
@@ -474,7 +464,7 @@ resource "kubernetes_manifest" "talosconfigtemplate_talos_em_worker_a" {
         "cluster.x-k8s.io/cluster-name" = data.coder_workspace.me.name
       }
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
     }
     "spec" = {
       "template" = {
@@ -493,7 +483,7 @@ resource "kubernetes_manifest" "machinedeployment_md_0" {
     "kind"       = "MachineDeployment"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
     }
     "spec" = {
       "clusterName" = data.coder_workspace.me.name
@@ -508,7 +498,7 @@ resource "kubernetes_manifest" "machinedeployment_md_0" {
               "apiVersion" = "bootstrap.cluster.x-k8s.io/v1beta1"
               "kind"       = "TalosConfigTemplate"
               "name"       = data.coder_workspace.me.name
-              "namespace"  = data.coder_workspace.me.name
+              "namespace"  = data.kubernetes_namespace.workspace.metadata[0].name
             }
           }
           "clusterName" = "kv1"
@@ -516,7 +506,7 @@ resource "kubernetes_manifest" "machinedeployment_md_0" {
             "apiVersion" = "infrastructure.cluster.x-k8s.io/v1alpha1"
             "kind"       = "KubevirtMachineTemplate"
             "name"       = data.coder_workspace.me.name
-            "namespace"  = data.coder_workspace.me.name
+            "namespace"  = data.kubernetes_namespace.workspace.metadata[0].name
           }
           "version" = "v1.23.5"
         }
@@ -529,8 +519,8 @@ resource "kubernetes_manifest" "configmap_capi_init" {
   manifest = {
     "kind" = "ConfigMap"
     "metadata" = {
-      "name"      = "capi-init"
-      "namespace" = data.coder_workspace.me.name
+      "name"      = "${data.coder_workspace.me.name}-capi-init"
+      "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
     }
     "apiVersion" = "v1"
     "data" = {
@@ -550,7 +540,7 @@ resource "kubernetes_manifest" "clusterresourceset_capi_init" {
     "kind"       = "ClusterResourceSet"
     "metadata" = {
       "name"      = data.coder_workspace.me.name
-      "namespace" = data.coder_workspace.me.name
+      "namespace" = data.kubernetes_namespace.workspace.metadata[0].name
     }
     "spec" = {
       "clusterSelector" = {
