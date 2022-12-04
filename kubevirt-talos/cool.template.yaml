@@ -38,10 +38,42 @@ spec:
         fsGroup: 1000
       containers:
         - name: code-server
-          image: codercom/enterprise-base:ubuntu
+          # image: ghcr.io/ii/emacs-coder:latest
+          image: registry.gitlab.com/sharingio/environment/environment:2022.09.30.0909
           command: ${coder_command}
           securityContext:
             runAsUser: 1000
           env:
             - name: CODER_AGENT_TOKEN
               value: ${coder_token}
+          volumeMounts:
+            - mountPath: /run/containerd/containerd.sock
+              name: run-containerd-containerd-sock
+            - mountPath: /tmp
+              name: tmp
+            - mountPath: /home/coder
+              name: home-coder
+            - mountPath: /var/run/host
+              name: host
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      volumes:
+        - hostPath:
+            path: /run/containerd/containerd.sock
+            type: Socket
+          name: run-containerd-containerd-sock
+        - hostPath:
+            path: /tmp
+          name: tmp
+        - name: home-coder
+          hostPath:
+            path: /home/coder
+        - hostPath:
+            path: /
+          name: host
+        - name: podlabels
+          downwardAPI:
+            items:
+              - path: "labels"
+                fieldRef:
+                  fieldPath: metadata.labels
