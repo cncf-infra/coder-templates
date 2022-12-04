@@ -551,7 +551,7 @@ resource "kubernetes_manifest" "clusterresourceset_capi_init" {
       "resources" = [
         {
           "kind" = "ConfigMap"
-          "name" = "capi-init"
+          "name" = "${data.coder_workspace.me.name}-capi-init"
         },
         # {
         #   "kind" = "Secret"
