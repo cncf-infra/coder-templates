@@ -264,6 +264,27 @@ resource "kubernetes_manifest" "taloscontrolplane_talos_em_control_plane" {
                 "extraKernelArgs" = ["console=ttyS0"]
               }
             },
+            {
+              "op"   = "add"
+              "path" = "/cluster/apiServer/admissionControl/0/configuration"
+              "value" = {
+                "apiVersion" = "pod-security.admission.config.k8s.io/v1alpha1"
+                "kind"       = "PodSecurityConfiguration"
+                "defaults" = {
+                  "enforce"         = "privileged"
+                  "enforce-version" = "latest"
+                  "audit"           = "restricted"
+                  "audit-version"   = "latest"
+                  "warn"            = "restricted"
+                  "warn-version"    = "latest"
+                }
+                "exemptions" = {
+                  "usernames"      = []
+                  "runtimeClasses" = []
+                  "namespaces"     = ["kube-system"]
+                }
+              }
+            },
             # {
             #   "op"   = "add"
             #   "path" = "/machine/kubelet/extraArgs"
@@ -303,6 +324,27 @@ resource "kubernetes_manifest" "taloscontrolplane_talos_em_control_plane" {
                 "disk"            = "/dev/sda"
                 "image"           = "ghcr.io/siderolabs/installer:v1.2.5"
                 "extraKernelArgs" = ["console=ttyS0"]
+              }
+            },
+            {
+              "op"   = "add"
+              "path" = "/cluster/apiServer/admissionControl/0/configuration"
+              "value" = {
+                "apiVersion" = "pod-security.admission.config.k8s.io/v1alpha1"
+                "kind"       = "PodSecurityConfiguration"
+                "defaults" = {
+                  "enforce"         = "privileged"
+                  "enforce-version" = "latest"
+                  "audit"           = "restricted"
+                  "audit-version"   = "latest"
+                  "warn"            = "restricted"
+                  "warn-version"    = "latest"
+                }
+                "exemptions" = {
+                  "usernames"      = []
+                  "runtimeClasses" = []
+                  "namespaces"     = ["kube-system"]
+                }
               }
             },
             {
@@ -562,3 +604,40 @@ resource "kubernetes_manifest" "clusterresourceset_capi_init" {
     }
   }
 }
+
+# resource "time_sleep" "wait_50_seconds" {
+#   create_duration = "50s"
+# }
+# data "kubernetes_secret_v1" "kubeconfig" {
+#   metadata {
+#     name      = "${data.coder_workspace.me.name}-kubeconfig"
+#     namespace = data.coder_workspace.me.name
+#   }
+
+#   depends_on = [
+#     kubernetes_manifest.clusterresourceset_capi_init,
+#     kubernetes_manifest.taloscontrolplane_talos_em_control_plane,
+#     kubernetes_manifest.kvcluster,
+#     kubernetes_manifest.cluster,
+#     time_sleep.wait_50_seconds
+#   ]
+# }
+
+# resource "coder_metadata" "kubeconfig" {
+#   count       = data.coder_workspace.me.start_count
+#   resource_id = data.kubernetes_namespace.workspace[0].id
+#   item {
+#     key   = "description"
+#     value = "The kubeconfig to connect to the cluster with"
+#   }
+#   item {
+#     key       = "kubeconfig"
+#     value     = data.kubernetes_secret_v1.kubeconfig == null ? "" : data.kubernetes_secret_v1.kubeconfig.data.value
+#     sensitive = true
+#   }
+
+#   depends_on = [
+#     data.kubernetes_secret_v1.kubeconfig,
+#     time_sleep.wait_50_seconds
+#   ]
+# }
