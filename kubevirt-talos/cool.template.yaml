@@ -53,22 +53,6 @@ spec:
           volumeMounts:
             - mountPath: /run/containerd/containerd.sock
               name: run-containerd-containerd-sock
-            - mountPath: /tmp
-              name: tmp
-            - mountPath: /home/coder
-              name: home-coder
-            - mountPath: /var/run/host
-              name: host
-      initContainers:
-        - name: fix-perms
-          image: alpine:3.15
-          command:
-            - sh
-            - -c
-            - chmod -R 777 /tmp
-          volumeMounts:
-            - mountPath: /tmp
-              name: tmp
             - mountPath: /home/coder
               name: home-coder
             - mountPath: /var/run/host
@@ -80,9 +64,6 @@ spec:
             path: /run/containerd/containerd.sock
             type: Socket
           name: run-containerd-containerd-sock
-        - hostPath:
-            path: /tmp
-          name: tmp
         - name: home-coder
           hostPath:
             path: /var/home/coder
