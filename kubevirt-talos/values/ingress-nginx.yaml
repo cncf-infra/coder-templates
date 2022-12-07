@@ -1,0 +1,23 @@
+podSecurityPolicy:
+  enabled: false
+controller:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - ingress-nginx
+            topologyKey: kubernetes.io/hostname
+          weight: 1
+  ingressClassResource:
+    default: true
+  service:
+    externalTrafficPolicy: Local
+    type: NodePort
+    nodePorts:
+      http: "31080"
+      https: "31443"
