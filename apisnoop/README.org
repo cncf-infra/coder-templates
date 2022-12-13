@@ -1,0 +1,55 @@
+#+title: APISnoop in-cluster development
+* creating an instance
+Login to your coder instance via the web and cli.
+Upload this template to your coder instance.
+Create a new workspace using this template.
+* grab cluster kubeconfig
+
+#+begin_src tmate :dir "../../.." :window kubectl
+export WORKSPACE=kv1
+unset KUBECONFIG
+TMPFILE=$(mktemp -t kubeconfig-XXXXX)
+kubectl get secrets -n $WORKSPACE ${WORKSPACE}-kubeconfig  -o jsonpath={.data.value} | base64 -d > $TMPFILE
+export KUBECONFIG=$TMPFILE
+kubectl get ns
+#+end_src
+
+** explore cluster
+#+begin_src shell
+export WORKSPACE=kv1
+unset KUBECONFIG
+TMPFILE=$(mktemp -t kubeconfig-XXXXX)
+kubectl get secrets -n $WORKSPACE ${WORKSPACE}-kubeconfig  -o jsonpath={.data.value} | base64 -d > $TMPFILE
+export KUBECONFIG=$TMPFILE
+kubectl get all -A
+#+end_src
+
+#+RESULTS:
+#+begin_example
+NAMESPACE     NAME                                    READY   STATUS    RESTARTS   AGE
+default       pod/code-server-0                       0/1     Pending   0          81s
+kube-system   pod/coredns-749558f7dd-mwwff            0/1     Pending   0          81s
+kube-system   pod/coredns-749558f7dd-ppw92            0/1     Pending   0          81s
+kube-system   pod/etcd-kv1-97525                      1/1     Running   0          90s
+kube-system   pod/kube-apiserver-kv1-97525            1/1     Running   0          90s
+kube-system   pod/kube-controller-manager-kv1-97525   1/1     Running   0          90s
+kube-system   pod/kube-proxy-48s9l                    1/1     Running   0          81s
+kube-system   pod/kube-scheduler-kv1-97525            1/1     Running   0          90s
+
+NAMESPACE     NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE
+default       service/kubernetes   ClusterIP   10.95.0.1    <none>        443/TCP                  97s
+kube-system   service/kube-dns     ClusterIP   10.95.0.10   <none>        53/UDP,53/TCP,9153/TCP   96s
+
+NAMESPACE     NAME                        DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+kube-system   daemonset.apps/kube-proxy   1         1         1       1            1           kubernetes.io/os=linux   96s
+
+NAMESPACE     NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+kube-system   deployment.apps/coredns   0/2     2            0           96s
+
+NAMESPACE     NAME                                 DESIRED   CURRENT   READY   AGE
+kube-system   replicaset.apps/coredns-749558f7dd   2         2         0       82s
+
+NAMESPACE   NAME                           READY   AGE
+default     statefulset.apps/code-server   0/1     88s
+#+end_example
+

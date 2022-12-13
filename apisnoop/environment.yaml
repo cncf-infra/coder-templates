@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coder
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: coder
+    namespace: default
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: devpod
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: devpod
+  serviceName: devpod
+  template:
+    metadata:
+      labels:
+        app: devpod
+    spec:
+      serviceAccountName: coder
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: code-server
+          # image: ghcr.io/ii/emacs-coder:latest
+          image: registry.gitlab.com/sharingio/environment/environment:2022.09.30.0909
+          command: ${coder_command}
+          securityContext:
+            runAsUser: 1000
+          env:
+            - name: CODER_AGENT_TOKEN
+              value: ${coder_token}
+            - name: PAIR_ENVIRONMENT_DEBUG
+              value: "true"
+            - name: REINIT_HOME_FOLDER
+              value: "true"
+          volumeMounts:
+            - mountPath: /run/containerd/containerd.sock
+              name: run-containerd-containerd-sock
+            - mountPath: /home/coder
+              name: home-coder
+            - mountPath: /var/run/host
+              name: host
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      volumes:
+        - hostPath:
+            path: /run/containerd/containerd.sock
+            type: Socket
+          name: run-containerd-containerd-sock
+        - name: home-coder
+          hostPath:
+            path: /var/home/coder
+        - hostPath:
+            path: /
+          name: host
+        - name: podlabels
+          downwardAPI:
+            items:
+              - path: "labels"
+                fieldRef:
+                  fieldPath: metadata.labels
