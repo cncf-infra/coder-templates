@@ -64,7 +64,7 @@ resource "coder_agent" "main" {
 
 # emacs-broadway
 resource "coder_app" "emacs-broadway" {
-  subdomain    = false
+  subdomain    = true
   share        = "public"
   agent_id     = coder_agent.main.id
   slug         = "emacs-broadway"
@@ -82,7 +82,7 @@ resource "coder_app" "emacs-broadway" {
 
 # ttyd
 resource "coder_app" "ttyd" {
-  subdomain    = false
+  subdomain    = true
   share        = "public"
   slug         = "ttyd"
   display_name = "ttyd for tmux"
@@ -106,6 +106,7 @@ resource "coder_app" "tmux" {
   icon         = "/icon/folder.svg" # let's maybe get an emacs.svg somehow
   command      = "tmux at"
   share        = "public"
+  subdomain    = true
 }
 
 # code-server
@@ -115,7 +116,7 @@ resource "coder_app" "code-server" {
   slug         = "code-server"
   icon         = "/icon/code.svg"
   url          = "http://localhost:13337?folder=/home/coder"
-  subdomain    = false
+  subdomain    = true
 
   # healthcheck {
   #   url       = "http://localhost:13337/healthz"
