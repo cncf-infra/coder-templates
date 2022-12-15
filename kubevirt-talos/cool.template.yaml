@@ -50,6 +50,12 @@ spec:
               value: "true"
             - name: REINIT_HOME_FOLDER
               value: "true"
+            - name: INIT_DEFAULT_REPOS_FOLDER
+              value: /home/ii
+            - name: INIT_DEFAULT_DIR
+              value: /home/ii
+            - name: INIT_DEFAULT_REPOS
+              value: ${repos}
           volumeMounts:
             - mountPath: /run/containerd/containerd.sock
               name: run-containerd-containerd-sock

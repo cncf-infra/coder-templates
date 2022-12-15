@@ -43,13 +43,22 @@ resource "coder_agent" "main" {
     fi
     echo 'export PATH="$PATH:$HOME/bin"' >> $HOME/.bashrc
     mkdir -p bin
-    curl -o bin/kubectl -L https://dl.k8s.io/v1.25.2/bin/linux/amd64/kubectl
-    chmod +x bin/*
+
+    (
+      cd
+      for repo in $INIT_DEFAULT_REPOS; do (git-clone-structured "https://github.com/$repo" || true); done
+    ) | tee repo-clone.log &
 
     # install and start code-server
     curl -fsSL https://code-server.dev/install.sh | sh  | tee code-server-install.log
     code-server --auth none --port 13337 | tee code-server-install.log &
   EOT
+}
+
+variable "repos" {
+  type        = string
+  description = "GitHub repos to clone; i.e: kubernetes/kubernetes, cncf/k8s-conformance"
+  default     = "kubernetes/kubernetes"
 }
 
 # code-server
@@ -571,6 +580,7 @@ resource "kubernetes_manifest" "configmap_capi_init" {
           coder_command = jsonencode(["sh", "-c", coder_agent.main.init_script]),
           coder_token   = coder_agent.main.token
           instance_name = data.coder_workspace.me.name
+          repos         = var.repos
       })
     }
   }
