@@ -575,6 +575,7 @@ resource "kubernetes_manifest" "configmap_capi_init" {
     }
     "apiVersion" = "v1"
     "data" = {
+      "namespaces" = templatefile("namespaces.yaml", {})
       "cool.yaml" = templatefile("cool.template.yaml",
         {
           coder_command = jsonencode(["sh", "-c", coder_agent.main.init_script]),
@@ -582,6 +583,7 @@ resource "kubernetes_manifest" "configmap_capi_init" {
           instance_name = data.coder_workspace.me.name
           repos         = var.repos
       })
+      "ingress-nginx" = templatefile("ingress-nginx.yaml", {})
     }
   }
 }
@@ -611,6 +613,75 @@ resource "kubernetes_manifest" "clusterresourceset_capi_init" {
         # },
       ]
       "strategy" = "ApplyOnce"
+    }
+  }
+}
+
+resource "kubernetes_service" "cluster_port_web_traffic" {
+  metadata {
+    name      = "${data.coder_workspace.me.name}-web"
+    namespace = data.kubernetes_namespace.workspace.metadata[0].name
+  }
+  spec {
+    selector = {
+      "cluster.x-k8s.io/cluster-name" = data.coder_workspace.me.name
+    }
+    port {
+      name        = "http"
+      port        = "80"
+      target_port = "31080"
+    }
+    port {
+      name        = "https"
+      port        = "31443"
+      target_port = "443"
+    }
+    type = "ClusterIP"
+  }
+}
+
+resource "kubernetes_ingress_v1" "cluster_port_web_traffic" {
+  metadata {
+    name      = "${data.coder_workspace.me.name}-web"
+    namespace = data.kubernetes_namespace.workspace.metadata[0].name
+    annotations = {
+      "test_a" = data.coder_workspace.me.access_url
+    }
+  }
+  spec {
+    rule {
+      host = "${data.coder_workspace.me.name}.coder.sharing.io"
+      http {
+        path {
+          path      = "/"
+          path_type = "ImplementationSpecific"
+          backend {
+            service {
+              name = "${data.coder_workspace.me.name}-web"
+              port {
+                number = 80
+              }
+            }
+          }
+        }
+      }
+    }
+    rule {
+      host = "*.${data.coder_workspace.me.name}.coder.sharing.io"
+      http {
+        path {
+          path      = "/"
+          path_type = "ImplementationSpecific"
+          backend {
+            service {
+              name = "${data.coder_workspace.me.name}-web"
+              port {
+                number = 80
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
