@@ -1,0 +1,83 @@
+#+title: Graphene Build
+
+
+* Goal
+[[https://github.com/cncf-infra/coder-templates/issues/16][Add build environment for grapheneOS]] Create a build environment for grapheneOS,
+following their build guide. Our resulting environment should have enough memory
+and storage to successfully build a custom image, along with all necessary
+dependencies to work on the development of that image.
+* Resources
+- [[https://grapheneos.org/build][Build page on grapheneos.org]]
+- [[https://store.google.com/us/product/pixel_6a?hl=en-US&pli=1][Pixel 6A]] :: this is the phone we'll use, codename bluejay
+*  Assumptions
+- We will only be building for the 6A and can limit our environment to just working with that.
+- We will use a combination of coder templates and startup scripts to set this
+  up. Coder templates to make sure we have a machine strong enough, and startup
+  scripts to bring down all the dependencies and set up a good environment.
+- We want to develop in the workspace, not just build the iamge. A good winning
+  flow is to make a change, build, flash, see the change on a phone, repeat.
+* Needs
+** Specs
+- x86_64 Linux build environment
+- Ubuntu 22.04 OS
+- 500gb storage (Notes/[[*Storage needed][Storage needed]])
+- 33-50 gib ram (Notes/[[*Ram needed][Ram Needed]])
+- en_US.UTF-8 locale supported
+- bash (not zsh!)
+** Dependencies
+- [[https://source.android.com/docs/setup/download#installing-repo][repo]]
+  - this  is an android build tool for working with git repos
+- python3 (for repo)
+- git (both for repo and manual usage)
+- gnupg (both for repo and manual usage)
+- Android Open Source Projectbuild dependencies
+  - diff (diffutils)
+  - freetype2 and any OpenType/TrueType font (such as DejaVu but anything works) for OpenJDK despite it being a headless variant without GUI support
+  - ncurses5 (provided by the source tree for some tools but not others)
+  - openssl
+  - rsync
+  - unzip
+  - zip
+- libgcc (for the host, not the target)
+- binutils (for the host, not the target)
+- protobuf library for Python 3
+- node 17 or later
+- yarn
+- gperf
+- 32-bit glibc
+- 32-bit gcc runtime library
+- signify
+** Kernel
+We'd be using the **raviole kernel**
+* Questions
+Should we make sure we have an android studio environment too? If we are wanting to customize or build any apps, it will be required.
+The graphene apps are written in Kotlin or as static html/css/js.
+* Notes
+** Storage needed
+But roughly, minimum roughly 500GB for storage?
+
+    sync of GrapheneOS : 120GB
+    build for single device : 250GB
+    Prebuilds for kernel, chromium, and others : ?
+    chromium sync : 100GB
+    - hippie, matrix chat
+
+"you might want to calculate those sizes yourself
+i gave you them from memory and heavily underreporting them (dont know the exact or more precise numbers off the top of my head)
+they may be a lot larger now "
+- [[https://matrix.to/#/!pJaowdvavGnwTUbvpa:grapheneos.org/$T7YHkZ9uE6dvDLzbij2cWGv4CuvrICtUHtv0hGazbbY?via=grapheneos.org&via=matrix.org&via=tchncs.de][r3g_5z, matrix chat]]
+** Ram needed
+- You need just 33 gb of ram to compile the kernel with full lto
+The only problem you can see is that sometimes the compiler just has a burst requirement or something else decides to use just a bit more memory so like 1 out of every 10 times your LTO process will hang with 33 gb. And by hang i mean that even if you leave it for 2 days it won't complete
+If that's acceptable to you and you can just cancel the build and rerun it again if it gets stuck then you can do it in 33
+- [[https://matrix.to/#/!pJaowdvavGnwTUbvpa:grapheneos.org/$GjIZgjQN1KfmYs0NzMOKJsTtmNKZAxDXwhrTyzyMXt4?via=grapheneos.org&via=matrix.org&via=tchncs.de][randomhydrosol, matrix chat]]
+
+** Building highlights
+- "You likely want to use the most recent stable tag, not the development branch, even for developing a feature. It's easier to port between stable tags that are known to work properly than dealing with a moving target."
+- For stable, we download from the releases page, but then make a dir with the right tag and init the repo with the repo tool and tag.
+  https://github.com/GrapheneOS/platform_manifest/releases/tag/TQ1A.221205.011.2022122700
+- "Set OFFICIAL_BUILD=true to include the Updater app. You must change the URL in packages/apps/Updater/res/values/config.xml to your own update server URL. Using the official update server with a build signed with different keys will not work and will essentially perform a denial of service attack on our update service. If you try to use the official URL, the app will download an official update and will detect it as corrupted or tampered. It will delete the update and try to download it over and over again since it will never be signed with your key." ([[https://grapheneos.org/build#setting-up-the-os-build-environment][building os environment]])
+  - building
+    "Next, start the build process with the m command: ~m target-files-package~
+    For the Pixel 6, Pixel 6 Pro and Pixel 6a you currently need m vendorbootimage target-files-package instead of target-files-package."
+    - Faster builds for development use only: The normal production build process involves building a target files package to be resigned with secure release keys and then converted into factory images and/or an update zip via the sections below. If you have a dedicated development device with no security requirements, you can save time by using the default build target rather than target-files-package. Leave the bootloader unlocked and flashing the raw images that are signed with the default public test keys.
