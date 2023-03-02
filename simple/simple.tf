@@ -57,7 +57,9 @@ BINARY_NAME=coder
 # We want to download locally... it's already downloaded somewhere and running!
 # The default port is 3000, and for now hardcoding to target OSX
 # TODO: dynimacially figure out port
-BINARY_URL=http://localhost:3000/bin/coder-darwin-arm64
+# TODO: Don't downlad at all, use local version
+# BINARY_URL=http://localhost:3000/bin/coder-darwin-arm64
+BINARY_URL=http://localhost:3000/bin/coder-linux-amd64
 cd "$BINARY_DIR"
 # Attempt to download the coder agent.
 # This could fail for a number of reasons, many of which are likely transient.
