@@ -76,7 +76,9 @@ fi
 export CODER_CONFIG_DIR=$BINARY_DIR
 export CODER_AGENT_LOG_DIR=$BINARY_DIR
 export CODER_AGENT_PPROF_ADDRESS=127.0.0.1:6161
-export CODER_AGENT_AUTH="${nonsensitive(coder_agent.dev.token)}"
+# AUTH default to 'token' TOKEN comes from coder_agent
+export CODER_AGENT_AUTH=token
+export CODER_AGENT_TOKEN="${nonsensitive(coder_agent.dev.token)}"
 # The coder agent service is actually already running localyl
 # We just need to connect to it!
 export CODER_URL="http://localhost:3000/"
