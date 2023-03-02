@@ -10,9 +10,12 @@ terraform {
 data "coder_workspace" "me" {}
 
 resource "coder_agent" "dev" {
-  arch = "arm64"  # M1
-  os   = "darwin" # OSX
-  dir  = "$HOME"  # Could set to somewhere
+  # arch = "arm64"  # M1
+  # os   = "darwin" # OSX
+  # TODO: Template these
+  arch = "amd64" # M1
+  os   = "linux" # OSX
+  dir  = "$HOME" # Could set to somewhere
   # login_before_ready = true
   startup_script = <<EOT
     #!/bin/bash
