@@ -1,0 +1,128 @@
+#+title: Simple Template
+
+* Start Coder Server locally
+#+begin_src tmate :window server
+coder server
+#+end_src
+* Not that postgresql is installed
+#+begin_src shell
+find  ~/Library/Application\ Support/coderv2/postgres | egrep -v 'data/|bin/'
+#+end_src
+
+#+RESULTS:
+#+begin_example
+/Users/hh/Library/Application Support/coderv2/postgres
+/Users/hh/Library/Application Support/coderv2/postgres/password
+/Users/hh/Library/Application Support/coderv2/postgres/cache
+/Users/hh/Library/Application Support/coderv2/postgres/cache/embedded-postgres-binaries-darwin-amd64-13.7.0.txz
+/Users/hh/Library/Application Support/coderv2/postgres/bin
+/Users/hh/Library/Application Support/coderv2/postgres/runtime
+/Users/hh/Library/Application Support/coderv2/postgres/port
+/Users/hh/Library/Application Support/coderv2/postgres/data
+#+end_example
+
+* Create First User
+While you will have an upstream url provided by the wiregaurd tunnel, you can also connect locally.
+Great for setting up that first user and getting templates uploaded.
+
+#+begin_src tmate :window "user"
+coder login http://localhost:3000 --first-user-email coder@ii.coop --first-user-password="iipasswordcoder" --first-user-trial --first-user-username=ii
+#+end_src
+
+* create template
+
+#+begin_src tmate :dir "." :window template
+coder template create simple -d . --yes
+#+end_src
+
+* create workspace
+
+#+begin_src tmate :dir "." :window workspace
+coder create local-1 --template simple --yes
+#+end_src
+
+* ssh to workspace
+
+#+begin_src tmate :dir "." :window ssh
+coder config-ssh --yes # will add some entries to ~/.ssh/config
+ssh coder.local-1
+#+end_src
+* run coder agent
+
+#+begin_src tmate :dir "." :window agent
+/tmp/local_coder_agent_init.sh
+#+end_src
+* url
+#+begin_src shell
+open http://localhost:3000
+#+end_src
+
+#+RESULTS:
+#+begin_example
+#+end_example
+
+* reset everything
+#+begin_src tmate :window reset
+rm -rf ~/Library/Application\ Support/coderv2/*
+#+end_src
+
+* Coder Iteration Loop
+** Start Coder
+#+begin_src tmate :window coder :dir "../../.."
+
+cd ~/sharingio/coder
+rm -rf ~/.config/coderv2/ # delete database
+coder server --address=0.0.0.0:7080 --access-url=https://coder.$SHARINGIO_PAIR_BASE_DNS_NAME \
+    2>&1 | tee coder-server.log
+#+end_src
+#+begin_src shell
+coder login `cat ~/.config/coderv2/url` -u ii -p ii -e ii@ii.nz
+#+end_src
+
+#+RESULTS:
+#+begin_example
+> Your Coder deployment hasn't been set up!
+
+  Welcome to Coder, ii! You're authenticated.
+
+  Get started by creating a template:  coder templates init
+#+end_example
+** coder url
+#+begin_src shell :dir "../../.."
+grep "coder login https://" coder-server.log | cut -d\  -f 4
+#+end_src
+
+#+RESULTS:
+#+begin_example
+https://coder.bobymcbobs.pair.sharing.io
+#+end_example
+
+
+* kubevirt workspace
+** create template and cluster
+
+#+begin_src tmate :dir "../../.." :window kubevirt
+cd ~/sharingio/coder
+export CRI_PATH=/var/run/containerd/containerd.sock
+export IMAGE_REPO=k8s.gcr.io
+export NODE_VM_IMAGE_TEMPLATE=quay.io/capk/ubuntu-2004-container-disk:v1.22.0
+coder template create kubevirt-talos \
+    -d examples/templates/kubevirt-talos \
+    --yes
+coder create kv1 --template kubevirt-talos
+#+end_src
+
+** update template and new cluster
+
+#+begin_src tmate :dir "../../.." :window kubevirt
+export WORKSPACE=kv1
+coder template push kubevirt-talos -d examples/templates/kubevirt-talos --yes
+coder create $WORKSPACE --template kubevirt-talos --parameter-file examples/templates/kubevirt/kubevirt.param.yaml --yes
+#+end_src
+
+* Tear down
+
+#+begin_src tmate :window kubevirt
+coder delete kv9
+#+end_src
+
