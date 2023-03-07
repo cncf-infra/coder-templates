@@ -4,10 +4,10 @@ terraform {
       source  = "coder/coder"
       version = "0.6.14" # current as of March 3rd 2023
     }
-    # provides us Platform and OS via go
+    # provides us Platform and OS via go ( but doesn't work on M1 / Arm )
     uname = {
       source  = "julienlevasseur/uname"
-      version = "0.0.3"
+      version = "0.0.4"
     }
   }
 }
@@ -15,11 +15,58 @@ terraform {
 data "coder_workspace" "me" {}
 data "uname" "system" {}
 
+# variable "arch" {
+#   description = "The value of go.GetInfo().Platform to supply to coder"
+#   type        = string
+#   default     = ""
+# }
+# variable "os" {
+#   description = "The value of go.GetInfo().OS to supply to coder"
+#   type        = string
+#   default     = ""
+# }
+
+resource "coder_metadata" "uname" {
+  # count       = 1 # data.coder_workspace.me.start_count
+  # count       = data.coder_workspace.me.start_count
+  count       = 1
+  resource_id = coder_agent.dev.id
+  # FIXME : Docs for coder_metadata use bad math (number + strings = errors)
+  # icon = data.coder_workspace.me.access_url + "/icon/k8s.png"
+  # Maybe + outside of templates is for numbers only
+  # instead use "${data.coder_workspace.me.access_url}/icon/k8s.png"
+  icon = "${data.coder_workspace.me.access_url}/icon/k8s.png"
+  # icon        = data.coder_workspace.me.access_url + "/icon/k8s.png"
+  # ^^^ this will generate an error about the right operand (to the + fuction) not being an number
+  #   Error: Invalid operand
+  # Unsuitable value for right operand: a number is required.
+  item {
+    key   = "iconurl"
+    value = "${data.coder_workspace.me.access_url}/icon/k8s.png"
+  }
+  item {
+    key   = "FOO"
+    value = "BAR"
+  }
+  item {
+    key   = "arch"
+    value = "arch FOO"
+    # value = data.uname.system.machine # goInfo.GetInfo().Platform
+  }
+  item {
+    key   = "os"
+    value = "BAR os"
+    # value = data.uname.system.operating_system # goInfo.GetInfo().OS)
+  }
+}
+
 resource "coder_agent" "dev" {
-  arch = data.uname.system.machine          # goInfo.GetInfo().Platform
-  os   = data.uname.system.operating_system # goInfo.GetInfo().OS)
-  # arch = "arm64"  # M1
-  # os   = "darwin" # OSX
+  # arch = var.arch
+  # os   = var.os
+  # arch = data.uname.system.machine          # goInfo.GetInfo().Platform
+  # os   = data.uname.system.operating_system # goInfo.GetInfo().OS)
+  arch = "arm64"  # M1
+  os   = "darwin" # OSX
   # TODO: Template these
   # arch = "amd64" # Intel
   # os   = "linux" # Linux
@@ -66,8 +113,8 @@ BINARY_NAME=coder
 # The default port is 3000, and for now hardcoding to target OSX
 # TODO: dynimacially figure out port
 # TODO: Don't downlad at all, use local version
-BINARY_URL=http://localhost:3000/bin/coder-${data.uname.system.machine}-${data.uname.system.operating_system}
-# BINARY_URL=http://localhost:3000/bin/coder-darwin-arm64
+# BINARY_URL=http://localhost:3000/bin/coder-$${data.uname.system.machine}-$${data.uname.system.operating_system}
+BINARY_URL=http://localhost:3000/bin/coder-darwin-arm64
 # BINARY_URL=http://localhost:3000/bin/coder-linux-amd64
 cd "$BINARY_DIR"
 # Attempt to download the coder agent.

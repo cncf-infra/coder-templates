@@ -16,7 +16,7 @@ output "os" {
 
 output "machine" {
   description = "goInfo.GetInfo().Platform as supplied by julienlevasseur/uname"
-  value       = data.uname.system.machine + "1"
+  value       = data.uname.system.machine
 }
 
 # The Above outputs are NULL on OSX
