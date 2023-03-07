@@ -18,13 +18,11 @@ terraform {
 provider "equinix" {
   # Configuration options
 }
+
 provider "template" {
   # Configuration options
 }
-# terraform import equinix_metal_device.emacs 76627b24-42eb-437e-a57f-550131cb5574
-# resource "equinix_metal_device" "emacs" {
-#   id = "76627b24-42eb-437e-a57f-550131cb5574"
-# }
+
 data "coder_workspace" "me" {}
 
 resource "coder_agent" "ii" {
@@ -49,37 +47,42 @@ resource "coder_agent" "ii" {
   # EOT
 }
 
-data "template_cloudinit_config" "coder" {
-  # gzip          = true
-  # base64_encode = true
+# data "template_cloudinit_config" "coder" {
+#   # gzip          = true
+#   # base64_encode = true
 
-  # # Main cloud-config configuration file.
-  # part {
-  #   filename     = "init.cfg"
-  #   content_type = "text/cloud-config"
-  #   content      = data.template_file.script.rendered
-  # }
-  part {
-    content_type = "text/x-shellscript"
-    content      = coder_agent.dev.init_script
-  }
+#   # # Main cloud-config configuration file.
+#   # part {
+#   #   filename     = "init.cfg"
+#   #   content_type = "text/cloud-config"
+#   #   content      = data.template_file.script.rendered
+#   # }
+#   part {
+#     content_type = "text/x-shellscript"
+#     content      = coder_agent.ii.init_script
+#   }
 
-  # part {
-  #   content_type = "text/x-shellscript"
-  #   content      = "ffbaz"
-  # }
-}
+#   # part {
+#   #   content_type = "text/x-shellscript"
+#   #   content      = "ffbaz"
+#   # }
+# }
 
 
 # equinix_metal_device.emacs:
 resource "equinix_metal_device" "pair" {
-  project_id       = "f4a7273d-b1fc-4c50-93e8-7fed753c86ff"
-  hostname         = "pair.sharing.io"
-  description      = "Infra for Pair"
-  metro            = "sy"
-  plan             = "m3.large.x86"
-  operating_system = "ubuntu_22_04"
-  user_data        = data.template_cloudinit_config.coder.rendered
+  project_id          = "f4a7273d-b1fc-4c50-93e8-7fed753c86ff"
+  hostname            = "pair.sharing.io"
+  description         = "Infra for Pair"
+  metro               = "sy"
+  plan                = "m3.large.x86"
+  operating_system    = "ubuntu_22_04"
+  user_data           = templatefile("cloud-config.yaml.tftpl", {
+    username          = "coder"  # data.coder_workspace.me.owner
+    init_script       = base64encode(coder_agent.ii.init_script)
+    coder_agent_token = coder_agent.ii.token
+  })
+
   # custom_data      = local.custom_data
   behavior {
     allow_changes = [
@@ -87,6 +90,7 @@ resource "equinix_metal_device" "pair" {
       "user_data"
     ]
   }
+
   tags = [
     "name:coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}",
     "Coder_Provisioned:true"
