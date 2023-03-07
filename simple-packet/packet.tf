@@ -4,10 +4,6 @@ terraform {
       source  = "equinix/equinix"
       version = "1.13.0"
     }
-    template = {
-      source  = "hashicorp/template"
-      version = "2.2.0"
-    }
     coder = {
       source  = "coder/coder"
       version = "0.6.14" # current as of March 3rd 2023
@@ -16,10 +12,6 @@ terraform {
 }
 
 provider "equinix" {
-  # Configuration options
-}
-
-provider "template" {
   # Configuration options
 }
 
@@ -71,14 +63,14 @@ resource "coder_agent" "ii" {
 
 # equinix_metal_device.emacs:
 resource "equinix_metal_device" "pair" {
-  project_id          = "f4a7273d-b1fc-4c50-93e8-7fed753c86ff"
-  hostname            = "pair.sharing.io"
-  description         = "Infra for Pair"
-  metro               = "sy"
-  plan                = "m3.large.x86"
-  operating_system    = "ubuntu_22_04"
-  user_data           = templatefile("cloud-config.yaml.tftpl", {
-    username          = "coder"  # data.coder_workspace.me.owner
+  project_id       = "f4a7273d-b1fc-4c50-93e8-7fed753c86ff"
+  hostname         = "pair.sharing.io"
+  description      = "Infra for Pair"
+  metro            = "sy"
+  plan             = "m3.large.x86"
+  operating_system = "ubuntu_22_04"
+  user_data = templatefile("cloud-config.yaml.tftpl", {
+    username          = "coder" # data.coder_workspace.me.owner
     init_script       = base64encode(coder_agent.ii.init_script)
     coder_agent_token = coder_agent.ii.token
   })

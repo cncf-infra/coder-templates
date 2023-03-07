@@ -4,14 +4,22 @@ terraform {
       source  = "coder/coder"
       version = "0.6.14" # current as of March 3rd 2023
     }
+    # provides us Platform and OS via go
+    uname = {
+      source  = "julienlevasseur/uname"
+      version = "0.0.3"
+    }
   }
 }
 
 data "coder_workspace" "me" {}
+data "uname" "system" {}
 
 resource "coder_agent" "dev" {
-  arch = "arm64"  # M1
-  os   = "darwin" # OSX
+  arch = data.uname.system.machine          # goInfo.GetInfo().Platform
+  os   = data.uname.system.operating_system # goInfo.GetInfo().OS)
+  # arch = "arm64"  # M1
+  # os   = "darwin" # OSX
   # TODO: Template these
   # arch = "amd64" # Intel
   # os   = "linux" # Linux
@@ -58,7 +66,8 @@ BINARY_NAME=coder
 # The default port is 3000, and for now hardcoding to target OSX
 # TODO: dynimacially figure out port
 # TODO: Don't downlad at all, use local version
-BINARY_URL=http://localhost:3000/bin/coder-darwin-arm64
+BINARY_URL=http://localhost:3000/bin/coder-${data.uname.system.machine}-${data.uname.system.operating_system}
+# BINARY_URL=http://localhost:3000/bin/coder-darwin-arm64
 # BINARY_URL=http://localhost:3000/bin/coder-linux-amd64
 cd "$BINARY_DIR"
 # Attempt to download the coder agent.
