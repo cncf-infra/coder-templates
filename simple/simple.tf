@@ -15,78 +15,18 @@ terraform {
 data "coder_workspace" "me" {}
 data "uname" "system" {}
 
-# variable "arch" {
-#   description = "The value of go.GetInfo().Platform to supply to coder"
-#   type        = string
-#   default     = ""
-# }
-# variable "os" {
-#   description = "The value of go.GetInfo().OS to supply to coder"
-#   type        = string
-#   default     = ""
-# }
-
-resource "coder_metadata" "uname" {
-  # count       = 1 # data.coder_workspace.me.start_count
-  # count       = data.coder_workspace.me.start_count
-  count       = 1
-  resource_id = coder_agent.dev.id
-  # FIXME : Docs for coder_metadata use bad math (number + strings = errors)
-  # icon = data.coder_workspace.me.access_url + "/icon/k8s.png"
-  # Maybe + outside of templates is for numbers only
-  # instead use "${data.coder_workspace.me.access_url}/icon/k8s.png"
-  icon = "${data.coder_workspace.me.access_url}/icon/k8s.png"
-  # icon        = data.coder_workspace.me.access_url + "/icon/k8s.png"
-  # ^^^ this will generate an error about the right operand (to the + fuction) not being an number
-  #   Error: Invalid operand
-  # Unsuitable value for right operand: a number is required.
-  item {
-    key   = "iconurl"
-    value = "${data.coder_workspace.me.access_url}/icon/k8s.png"
-  }
-  item {
-    key   = "FOO"
-    value = "BAR"
-  }
-  item {
-    key   = "arch"
-    value = "arch FOO"
-    # value = data.uname.system.machine # goInfo.GetInfo().Platform
-  }
-  item {
-    key   = "os"
-    value = "BAR os"
-    # value = data.uname.system.operating_system # goInfo.GetInfo().OS)
-  }
-}
-
-resource "coder_agent" "dev" {
-  # arch = var.arch
-  # os   = var.os
-  # arch = data.uname.system.machine          # goInfo.GetInfo().Platform
-  # os   = data.uname.system.operating_system # goInfo.GetInfo().OS)
-  arch = "arm64"  # M1
-  os   = "darwin" # OSX
-  # TODO: Template these
-  # arch = "amd64" # Intel
-  # os   = "linux" # Linux
-  dir = "$HOME" # Could set to somewhere
-  # login_before_ready = true
-  startup_script = <<EOT
+resource "coder_agent" "script" {
+  # This agent is used with a script in /tmp
+  arch               = "arm64"  # M1
+  os                 = "darwin" # OSX
+  dir                = "$HOME"  # Could set to somewhere
+  login_before_ready = true
+  startup_script     = <<EOT
     #!/bin/bash
     # We could start an editor here... but we won't
     echo Keep it Simple
     sleep 999999999
   EOT
-  # This needs to run until it doesn't need to run :)
-  # null_resource.local_coder_agent: (local-exec):
-  # Error: The agent cannot authenticate until the workspace provision job has been completed.
-  # If the job is no longer running, this agent is invalid.
-  # shutdown_script = <<EOT
-  #   #!/bin/bash
-  #   # We could stop any resources we started
-  #   echo Keep it Simple
-  # EOT
 }
 
 # template from coder_agent.dev.init_script modified to grab coder from local 'coder server'
@@ -94,7 +34,7 @@ resource "coder_agent" "dev" {
 # TODO: updated to discover the listening port of the running binary to connect back ti
 # TODO: if downloading, discover local os (darwin/linux-amd64/arm64)
 resource "local_file" "localhost_coder_agent_init" {
-  filename        = "/tmp/local_coder_agent_init.sh"
+  filename        = "/tmp/coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}/coder_agent_init.sh"
   file_permission = "0755"
   content         = <<EOT
 #!/usr/bin/env sh
@@ -139,7 +79,7 @@ export CODER_AGENT_LOG_DIR=$BINARY_DIR
 export CODER_AGENT_PPROF_ADDRESS=127.0.0.1:6161
 # AUTH default to 'token' TOKEN comes from coder_agent
 export CODER_AGENT_AUTH=token
-export CODER_AGENT_TOKEN="${nonsensitive(coder_agent.dev.token)}"
+export CODER_AGENT_TOKEN="${nonsensitive(coder_agent.script.token)}"
 # The coder agent service is actually already running localyl
 # We just need to connect to it!
 export CODER_URL="http://localhost:3000/"
@@ -148,6 +88,69 @@ export CODER_AGENT_URL="http://localhost:3000/"
 exec ./$BINARY_NAME agent
 EOT
 }
+
+resource "coder_agent" "ii" {
+  arch               = "arm64"  # M1
+  os                 = "darwin" # OSX
+  dir                = "$HOME"  # Could set to somewhere
+  login_before_ready = true
+  startup_script     = <<EOT
+    #!/bin/bash
+    sleep 999999999
+  EOT
+}
+
+resource "null_resource" "scriptlike_coder_agent" {
+  provisioner "local-exec" {
+    interpreter = ["sh", "-c"]
+    # We expect coder to be in the path (and probably be the same as 'coder server')
+    command = <<-EOT
+    # coder needs to see them within the `coder agent` process, so the need to be exported
+    # NOT just availble to the posix shell
+    export CODER_URL CODER_AGENT_URL CODER_AGENT_PPROF_ADDRESS CODER_CONFIG_DIR CODER_AGENT_LOG_DIR CODER_AGENT_AUTH CODER_AGENT_TOKEN
+    mkdir -p $CODER_AGENT_LOG_DIR
+    env | grep CODER
+    coder agent -h
+    # We'd like to start the agent here
+    EOT
+    environment = {
+      CODER_URL                 = "http://localhost:3000/" # We assume default local port
+      CODER_AGENT_URL           = "http://localhost:3000/"
+      CODER_AGENT_PPROF_ADDRESS = "127.0.0.1:6161"
+      CODER_CONFIG_DIR          = "/tmp/coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}/"
+      CODER_AGENT_LOG_DIR       = "/tmp/coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}/logs"
+      CODER_AGENT_AUTH          = "token"
+      CODER_AGENT_TOKEN         = "${nonsensitive(coder_agent.script.token)}"
+      # https://github.com/hashicorp/terraform/blob/56d21381df8d1a3728f9928be7cee366be1ae4c6/website/docs/language/functions/nonsensitive.html.md
+    }
+  }
+}
+
+
+# resource "null_resource" "ii_coder_agent" {
+#   provisioner "local-exec" {
+#     interpreter = ["sh", "-c"]
+#     # We expect coder to be in the path (and probably be the same as 'coder server')
+#     command = <<-EOT
+#     # coder needs to see them within the `coder agent` process, so the need to be exported
+#     # NOT just availble to the posix shell
+#     export CODER_URL CODER_AGENT_URL CODER_AGENT_PPROF_ADDRESS CODER_CONFIG_DIR CODER_AGENT_LOG_DIR CODER_AGENT_AUTH CODER_AGENT_TOKEN
+#     mkdir -p $CODER_AGENT_LOG_DIR
+#     env | grep CODER
+#     coder agent &
+#     EOT
+#     environment = {
+#       CODER_URL                 = "http://localhost:3000/" # We assume default local port
+#       CODER_AGENT_URL           = "http://localhost:3000/"
+#       CODER_AGENT_PPROF_ADDRESS = "127.0.0.1:6161"
+#       CODER_CONFIG_DIR          = "/tmp/${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}/"
+#       CODER_AGENT_LOG_DIR       = "/tmp/${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}/logs"
+#       CODER_AGENT_AUTH          = "token"
+#       CODER_AGENT_TOKEN         = "${nonsensitive(coder_agent.ii.token)}"
+#       # https://github.com/hashicorp/terraform/blob/56d21381df8d1a3728f9928be7cee366be1ae4c6/website/docs/language/functions/nonsensitive.html.md
+#     }
+#   }
+# }
 
 # resource "null_resource" "local_coder_agent" {
 #   provisioner "local-exec" {
@@ -170,4 +173,48 @@ EOT
 #   content         = nonsensitive(coder_agent.dev.token)
 #   filename        = "/tmp/coder_agent_token.env"
 #   file_permission = "0755"
+# }
+# variable "arch" {
+#   description = "The value of go.GetInfo().Platform to supply to coder"
+#   type        = string
+#   default     = ""
+# }
+# variable "os" {
+#   description = "The value of go.GetInfo().OS to supply to coder"
+#   type        = string
+#   default     = ""
+# }
+
+# resource "coder_metadata" "uname" {
+#   # count       = 1 # data.coder_workspace.me.start_count
+#   # count       = data.coder_workspace.me.start_count
+#   count       = 1
+#   resource_id = coder_agent.dev.id
+#   # FIXME : Docs for coder_metadata use bad math (number + strings = errors)
+#   # icon = data.coder_workspace.me.access_url + "/icon/k8s.png"
+#   # Maybe + outside of templates is for numbers only
+#   # instead use "${data.coder_workspace.me.access_url}/icon/k8s.png"
+#   icon = "${data.coder_workspace.me.access_url}/icon/k8s.png"
+#   # icon        = data.coder_workspace.me.access_url + "/icon/k8s.png"
+#   # ^^^ this will generate an error about the right operand (to the + fuction) not being an number
+#   #   Error: Invalid operand
+#   # Unsuitable value for right operand: a number is required.
+#   item {
+#     key   = "iconurl"
+#     value = "${data.coder_workspace.me.access_url}/icon/k8s.png"
+#   }
+#   item {
+#     key   = "FOO"
+#     value = "BAR"
+#   }
+#   item {
+#     key   = "arch"
+#     value = "arch FOO"
+#     # value = data.uname.system.machine # goInfo.GetInfo().Platform
+#   }
+#   item {
+#     key   = "os"
+#     value = "BAR os"
+#     # value = data.uname.system.operating_system # goInfo.GetInfo().OS)
+#   }
 # }
