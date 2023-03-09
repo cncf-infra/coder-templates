@@ -1,0 +1,154 @@
+#+title: Simple Packet Template
+* Go get a METAL_AUTH_TOKEN
+Login to your equinix metal account, and ensure you choose the correct organization / project:
+
+- https://console.equinix.com/organizations # Choose CNCF or other
+- [[https://console.equinix.com/organizations/670f523c-7a91-4757-b152-a2160ca4c807/projects][https://console.equinix.com/organizations/CNCF-ORG-ID/projects]] # Choose your Project
+- [[https://console.equinix.com/projects/f4a7273d-b1fc-4c50-93e8-7fed753c86ff][https://console.equinix.com/projects/CNCF-PROJECT-ID]] # Your Projects Metal Hardware from Packet
+- https://console.equinix.com/profile/api-keys # Set yourself up a key here
+
+At a mininimum you will need to authenticated:
+
+#+begin_src tmate :window server
+export METAL_AUTH_TOKEN=XXXXX
+#+end_src
+
+Not required, but you may override a few default TF_VARS_ :
+
+#+begin_src tmate :window server
+export TF_VAR_device_plan="m3.large.x86"
+export TF_VAR_metro="sy"
+export TF_VAR_project="f4a7273d-b1fc-4c50-93e8-7fed753c86ff"
+export TF_VAR_hostname="packet.sharing.io"
+export TF_VAR_os="ubuntu_22_04"
+#+end_src
+
+* Start Coder Server locally
+#+begin_src tmate :window server
+coder server
+#+end_src
+
+* Create First User
+
+#+begin_src tmate :window "user"
+coder login http://localhost:3000 --first-user-email coder@ii.coop --first-user-password="coderpassword" --first-user-trial --first-user-username=ii
+#+end_src
+
+* create template
+
+#+begin_src tmate :dir "." :window template
+coder template create --yes
+#+end_src
+
+* create workspace
+
+#+begin_src tmate :dir "." :window workspace
+export CODER_TEMPLATE_NAME=simple-packet
+coder create --yes packet
+#+end_src
+
+* ssh to workspace
+
+#+begin_src tmate :dir "." :window ssh
+coder config-ssh --yes
+ssh coder.packet
+#+end_src
+
+* url
+#+begin_src shell :results none
+open http://localhost:3000
+#+end_src
+* Exploring via metal cli
+https://deploy.equinix.com/developers/docs/metal/libraries/cli/
+** init
+#+begin_example
+$ metal init
+Equinix Metal API Tokens can be obtained through the portal at https://console.equinix.com/.
+See https://metal.equinix.com/developers/docs/accounts/users/ for more details.
+
+Token (hidden):
+Organization ID [2cc815ca-2b2c-4b43-99ec-359b77fa0709]: 670f523c-7a91-4757-b152-a2160ca4c807
+Project ID [54b17c77-89d8-4db4-b8dc-719aa3025827]: f4a7273d-b1fc-4c50-93e8-7fed753c86ff
+#+end_example
+**
+* reset everything
+#+begin_src tmate :window reset
+rm -rf ~/Library/Application\ Support/coderv2/*
+#+end_src
+
+* Coder Iteration Loop
+** Start Coder
+#+begin_src tmate :window coder :dir "../../.."
+
+cd ~/sharingio/coder
+rm -rf ~/.config/coderv2/ # delete database
+coder server --address=0.0.0.0:7080 --access-url=https://coder.$SHARINGIO_PAIR_BASE_DNS_NAME \
+    2>&1 | tee coder-server.log
+#+end_src
+#+begin_src shell
+coder login `cat ~/.config/coderv2/url` -u ii -p ii -e ii@ii.nz
+#+end_src
+
+#+RESULTS:
+#+begin_example
+> Your Coder deployment hasn't been set up!
+
+  Welcome to Coder, ii! You're authenticated.
+
+  Get started by creating a template:  coder templates init
+#+end_example
+** coder url
+#+begin_src shell :dir "../../.."
+grep "coder login https://" coder-server.log | cut -d\  -f 4
+#+end_src
+
+#+RESULTS:
+#+begin_example
+https://coder.bobymcbobs.pair.sharing.io
+#+end_example
+
+
+* kubevirt workspace
+** create template and cluster
+
+#+begin_src tmate :dir "../../.." :window kubevirt
+cd ~/sharingio/coder
+export CRI_PATH=/var/run/containerd/containerd.sock
+export IMAGE_REPO=k8s.gcr.io
+export NODE_VM_IMAGE_TEMPLATE=quay.io/capk/ubuntu-2004-container-disk:v1.22.0
+coder template create kubevirt-talos \
+    -d examples/templates/kubevirt-talos \
+    --yes
+coder create kv1 --template kubevirt-talos
+#+end_src
+
+** update template and new cluster
+
+#+begin_src tmate :dir "../../.." :window kubevirt
+export WORKSPACE=kv1
+coder template push kubevirt-talos -d examples/templates/kubevirt-talos --yes
+coder create $WORKSPACE --template kubevirt-talos --parameter-file examples/templates/kubevirt/kubevirt.param.yaml --yes
+#+end_src
+* Not that postgresql is installed
+#+begin_src shell
+find  ~/Library/Application\ Support/coderv2/postgres | egrep -v 'data/|bin/'
+#+end_src
+
+#+RESULTS:
+#+begin_example
+/Users/hh/Library/Application Support/coderv2/postgres
+/Users/hh/Library/Application Support/coderv2/postgres/password
+/Users/hh/Library/Application Support/coderv2/postgres/cache
+/Users/hh/Library/Application Support/coderv2/postgres/cache/embedded-postgres-binaries-darwin-amd64-13.7.0.txz
+/Users/hh/Library/Application Support/coderv2/postgres/bin
+/Users/hh/Library/Application Support/coderv2/postgres/runtime
+/Users/hh/Library/Application Support/coderv2/postgres/port
+/Users/hh/Library/Application Support/coderv2/postgres/data
+#+end_example
+
+
+* Tear down
+
+#+begin_src tmate :window kubevirt
+coder delete kv9
+#+end_src
