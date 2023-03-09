@@ -4,29 +4,11 @@
 #+begin_src tmate :window server
 coder server
 #+end_src
-* Not that postgresql is installed
-#+begin_src shell
-find  ~/Library/Application\ Support/coderv2/postgres | egrep -v 'data/|bin/'
-#+end_src
-
-#+RESULTS:
-#+begin_example
-/Users/hh/Library/Application Support/coderv2/postgres
-/Users/hh/Library/Application Support/coderv2/postgres/password
-/Users/hh/Library/Application Support/coderv2/postgres/cache
-/Users/hh/Library/Application Support/coderv2/postgres/cache/embedded-postgres-binaries-darwin-amd64-13.7.0.txz
-/Users/hh/Library/Application Support/coderv2/postgres/bin
-/Users/hh/Library/Application Support/coderv2/postgres/runtime
-/Users/hh/Library/Application Support/coderv2/postgres/port
-/Users/hh/Library/Application Support/coderv2/postgres/data
-#+end_example
 
 * Create First User
-While you will have an upstream url provided by the wiregaurd tunnel, you can also connect locally.
-Great for setting up that first user and getting templates uploaded.
 
 #+begin_src tmate :window "user"
-coder login http://localhost:3000 --first-user-email coder@ii.coop --first-user-password="iipasswordcoder" --first-user-trial --first-user-username=ii
+coder login http://localhost:3000 --first-user-email coder@ii.coop --first-user-password="coderpassword" --first-user-trial --first-user-username=ii
 #+end_src
 
 * create template
@@ -38,28 +20,20 @@ coder template create simple -d . --yes
 * create workspace
 
 #+begin_src tmate :dir "." :window workspace
-coder create local-1 --template simple --yes
+coder create --template simple --yes ws1
 #+end_src
 
 * ssh to workspace
 
 #+begin_src tmate :dir "." :window ssh
-coder config-ssh --yes # will add some entries to ~/.ssh/config
-ssh coder.local-1
+coder config-ssh --yes
+ssh coder.ws1
 #+end_src
-* run coder agent
 
-#+begin_src tmate :dir "." :window agent
-/tmp/local_coder_agent_init.sh
-#+end_src
 * url
-#+begin_src shell
+#+begin_src shell :results none
 open http://localhost:3000
 #+end_src
-
-#+RESULTS:
-#+begin_example
-#+end_example
 
 * reset everything
 #+begin_src tmate :window reset
@@ -119,6 +93,23 @@ export WORKSPACE=kv1
 coder template push kubevirt-talos -d examples/templates/kubevirt-talos --yes
 coder create $WORKSPACE --template kubevirt-talos --parameter-file examples/templates/kubevirt/kubevirt.param.yaml --yes
 #+end_src
+* Not that postgresql is installed
+#+begin_src shell
+find  ~/Library/Application\ Support/coderv2/postgres | egrep -v 'data/|bin/'
+#+end_src
+
+#+RESULTS:
+#+begin_example
+/Users/hh/Library/Application Support/coderv2/postgres
+/Users/hh/Library/Application Support/coderv2/postgres/password
+/Users/hh/Library/Application Support/coderv2/postgres/cache
+/Users/hh/Library/Application Support/coderv2/postgres/cache/embedded-postgres-binaries-darwin-amd64-13.7.0.txz
+/Users/hh/Library/Application Support/coderv2/postgres/bin
+/Users/hh/Library/Application Support/coderv2/postgres/runtime
+/Users/hh/Library/Application Support/coderv2/postgres/port
+/Users/hh/Library/Application Support/coderv2/postgres/data
+#+end_example
+
 
 * Tear down
 
