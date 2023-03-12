@@ -124,13 +124,13 @@ resource "coder_agent" "ii" {
   # https://registry.terraform.io/providers/julienlevasseur/uname/latest/docs/data-sources/uname#machine
   #  Error: expected arch to be one of [amd64 armv7 arm64], got x86_64
   # arch               = data.uname.system.machine
-  arch = amd64
+  arch = "amd64"
 
   # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#os
   # https://registry.terraform.io/providers/julienlevasseur/uname/latest/docs/data-sources/uname#kernel_name
   #  Error: expected os to be one of [linux darwin windows], got Linux^
   #  os                 = data.uname.system.kernel_name
-  os = linux
+  os = "linux"
 
   # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#dir
   dir                = "$HOME"  # Could set to somewhere
