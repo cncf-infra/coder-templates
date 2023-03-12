@@ -113,16 +113,24 @@ resource "local_file" "coder_agent" {
 # FIXME: Can we update the script to detect OS and ARCH?
 # curl / mozilla etc all send arch and os in http header strings
 
+
+# FIXME: uname needs wrappers to get correct stuff
+#  Error: expected arch to be one of [amd64 armv7 arm64], got x86_64
+#  Error: expected os to be one of [linux darwin windows], got Linux^
 # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent
 resource "coder_agent" "ii" {
 
   # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#arch
   # https://registry.terraform.io/providers/julienlevasseur/uname/latest/docs/data-sources/uname#machine
-  arch               = data.uname.system.machine
+  #  Error: expected arch to be one of [amd64 armv7 arm64], got x86_64
+  # arch               = data.uname.system.machine
+  arch = amd64
 
   # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#os
-  # https://registry.terraform.io/providers/julienlevasseur/uname/latest/docs/data-sources/uname#operating_system
-  os                 = data.uname.system.operating_system
+  # https://registry.terraform.io/providers/julienlevasseur/uname/latest/docs/data-sources/uname#kernel_name
+  #  Error: expected os to be one of [linux darwin windows], got Linux^
+  #  os                 = data.uname.system.kernel_name
+  os = linux
 
   # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#dir
   dir                = "$HOME"  # Could set to somewhere
