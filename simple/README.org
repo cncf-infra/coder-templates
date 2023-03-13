@@ -1,11 +1,12 @@
 #+title: Simple Template
-
-
+* Install coder cli binary
+#+begin_src tmate :window server
+curl -fsSL https://coder.com/install.sh | sh
+#+end_src
 * Start Coder Server locally
 #+begin_src tmate :window server
 coder server
 #+end_src
-
 * Create First User (new window)
 
 #+begin_src tmate :window "user"
