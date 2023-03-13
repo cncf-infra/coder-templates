@@ -1,43 +1,103 @@
 terraform {
   required_providers {
+    # https://registry.terraform.io/providers/coder/coder/latest
     coder = {
       source  = "coder/coder"
-      version = "0.6.14" # current as of March 3rd 2023
+      version = "0.6.17" # current as of March 13th 2023
     }
-    # provides us Platform and OS via go ( but doesn't work on M1 / Arm )
+    # https://registry.terraform.io/providers/julienlevasseur/uname/latest
+    # provides us Platform and OS via go
     uname = {
       source  = "julienlevasseur/uname"
-      version = "0.0.4"
+      version = "0.1.0" # current as of March 13th 2023
     }
   }
 }
 
+# https://registry.terraform.io/providers/coder/coder/latest/docs/data-sources/workspace
 data "coder_workspace" "me" {}
+# https://registry.terraform.io/providers/julienlevasseur/uname/latest/docs/data-sources/uname
 data "uname" "system" {}
 
+# https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file#example-usage
 resource "local_file" "coder_agent" {
-  count           = data.coder_workspace.me.start_count # Script will not exist when shutdown
+
+  # https://registry.terraform.io/providers/coder/coder/latest/docs/data-sources/workspace#example-usage
+  # https://developer.hashicorp.com/terraform/language/meta-arguments/count
+  count           = data.coder_workspace.me.transition == "start" ? 1 : 0
+
+  # https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file#filename
+  # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
+  # TLDR for String Interpolation
+  # NAME=workspace1 OWNER=ii echo "/tmp/coder-${OWNER}-${NAME}/coder_agent_init.sh"
+  # /tmp/coder-ii-workspace1/coder_agent_init.sh
   filename        = "/tmp/coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}/coder_agent_init.sh"
+
+  # https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file#file_permission
+  # https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation
+  # Read (4), Write (2), Execute (1)
+  # Owner is the second number = 4 + 2 + 1 = 7
+  # Group is the third number = 4 + 1 = 5
+  # Other is the forth number = 4 + 1 = 5
   file_permission = "0755"
+
+  # https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file#content
+  # https://developer.hashicorp.com/terraform/language/expressions/strings#indented-heredocs
   content         = <<-EOT
+    # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#token
+    # https://coder.com/docs/v1/latest/workspaces/variables#other-variables
+    # https://github.com/coder/coder/issues/6421 # docs missing
     export CODER_AGENT_TOKEN="${coder_agent.ii.token}"
+    # coder agent -h | grep -B1 'Consumes .CODER_CONFIG_DIR' | head -1
+    # --global-config coder   Path to the global coder config directory.
     export CODER_CONFIG_DIR="/tmp/coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}"
+    # coder agent -h | grep -B1 'Consumes .CODER_AGENT_LOG_DIR' | head -1
+    # --log-dir string         Specify the location for the agent log files.
     export CODER_AGENT_LOG_DIR="$CODER_CONFIG_DIR/logs"
+    # coder agent -h | grep -B1 'Consumes .CODER_URL' | head -1
+    # --url string            URL to a deployment.
     export CODER_URL="http://localhost:3000/"
+    # FIXME: Can't find docs... is this used?
     export CODER_AGENT_URL="http://localhost:3000/"
+    # coder agent -h | grep -B1 'Consumes .CODER_AGENT_PPROF_ADDRESS' | head -1
+    # --pprof-address string   The address to serve pprof.
     export CODER_AGENT_PPROF_ADDRESS=127.0.0.1:6060 # Would love to use first available port
+    # $$ when fed to a posix shell emits the current proccess id (PID)
+    # We save it to coder_agent.pid so we can kill it later!
     echo $$ > $CODER_CONFIG_DIR/coder_agent.pid # Save Process ID so we can signal later
     cd /tmp # Choose any folder to serve from!
     # Going to assume the 'coder' binary in our path is good enough!
+    # We won't download since we are local to the coder server
+    # exec replaces the current process 'sh' with the coder process
+    # https://github.com/coder/coder/blob/main/agent/agent.go#L92
     exec coder agent
   EOT
+
+  # https://developer.hashicorp.com/terraform/language/resources/provisioners/syntax#how-to-use-provisioners
+  # https://developer.hashicorp.com/terraform/language/resources/provisioners/local-exec
   # This simple calls coder_agent_init.sh and logs it to a per workspace/agent init.log
   provisioner "local-exec" {
+    # This will get called when creating the workspace, after the local-file is on disk
+    # https://developer.hashicorp.com/terraform/language/resources/provisioners/local-exec#when
+    when        = create
+    # We do need a posix shell for now, need to rethink for windows
+    # https://developer.hashicorp.com/terraform/language/resources/provisioners/local-exec#interpreter
     interpreter = ["sh", "-c"]
+    # We want to start our coder agent in the folder this script is written to
+    # https://developer.hashicorp.com/terraform/language/resources/provisioners/local-exec#working_dira
+    # https://developer.hashicorp.com/terraform/language/functions/dirname
+    # dirname('/tmp/file.txt') returns '/tmp/'
     working_dir = dirname(self.filename)
+    # We want to log both the output and errors from our script
+    # https://linuxize.com/post/bash-redirect-stderr-stdout/
+    # We also want to run in the background, so this script can exit
+    # https://askubuntu.com/questions/88091/how-to-run-a-shell-script-in-background
     command     = "${self.filename} 2&> coder-init.log & disown"
   }
-  # # This simple calls coder_agent_init.sh and logs it to a per workspace/agent init.log
+
+  # Similar to our create provisioner, but called on destroy (technically when count = 0)
+  # This simple calls coder_agent_init.sh and logs it to a per workspace/agent init.log
+  # https://developer.hashicorp.com/terraform/language/resources/provisioners/syntax#destroy-time-provisioners
   provisioner "local-exec" {
     when        = destroy
     interpreter = ["sh", "-c"]
@@ -46,24 +106,49 @@ resource "local_file" "coder_agent" {
   }
 }
 
+
+# We need a coder_agent resource in order to have a token for our script
+# When coder agent is run, it use a token generated here
+# coder agent will also use this startup script
+# FIXME: Can we update the script to detect OS and ARCH?
+# curl / mozilla etc all send arch and os in http header strings
+
+
+# FIXME: uname needs wrappers to get correct stuff
+#  Error: expected arch to be one of [amd64 armv7 arm64], got x86_64
+#  Error: expected os to be one of [linux darwin windows], got Linux^
+# https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent
 resource "coder_agent" "ii" {
-  # When coder agent is run, it use a token generated here
-  # coder agent will also use this startup script
-  # TODO: Figure out what these are used for...
-  # I'm suspecting these may only be to identify a download binary
-  # FIXME: Can we update the script to detect OS and ARCH?
-  # curl / mozilla etc all send arch and os in http header strings
-  arch               = "arm64"  # M1
-  os                 = "darwin" # OSX
+
+  # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#arch
+  # https://registry.terraform.io/providers/julienlevasseur/uname/latest/docs/data-sources/uname#machine
+  #  Error: expected arch to be one of [amd64 armv7 arm64], got x86_64
+  # arch               = data.uname.system.machine
+  arch = "amd64"
+
+  # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#os
+  # https://registry.terraform.io/providers/julienlevasseur/uname/latest/docs/data-sources/uname#kernel_name
+  #  Error: expected os to be one of [linux darwin windows], got Linux^
+  #  os                 = data.uname.system.kernel_name
+  os = "linux"
+
+  # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#dir
   dir                = "$HOME"  # Could set to somewhere
+
+  # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#login_before_ready
   login_before_ready = true
+
+  # We could start an editor here... but we won't yet... this is the simple version
+  # https://registry.terraform.io/providers/coder/coder/latest/docs/resources/agent#startup_script
   startup_script     = <<EOT
     #!/bin/bash
-    # We could start an editor here... but we won't yet
     echo Keep it Simple
     sleep 999999999
   EOT
 }
+
+# FIXME: Doesn't work for me yet
+# https://registry.terraform.io/providers/coder/coder/latest/docs/resources/metadata
 
 # resource "coder_metadata" "uname" {
 #   # count       = 1 # data.coder_workspace.me.start_count
