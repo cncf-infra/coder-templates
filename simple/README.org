@@ -54,12 +54,37 @@ open http://localhost:3000
 #+end_src
 
 * reset everything
+The configuration for coder is stored in different locations on different OSes.
+
+In linux it's usually `~/.config/coderv2/` and OSX it's `~/Library/Application Support/coderv2/`
+
+With `coder server` not running (and embedded postgres down), delete the underlying folder:
+
 #+begin_src tmate :window reset
 rm -rf ~/Library/Application\ Support/coderv2/*
 #+end_src
 
-* Coder Iteration Loop
-** Start Coder
+* Footnotes
+** Embedded Postgres
+#+begin_src shell :wrap "src tmate :window postgres"
+coder server postgres-builtin-url
+#+end_src
+
+#+RESULTS:
+#+begin_src tmate :window postgres
+ psql "postgres://coder@localhost:53292/coder?sslmode=disable&password=Zql9pOVipHvECfSJ"
+#+end_src
+
+#+begin_src tmate :window postgres
+\dt
+#+end_src
+
+#+begin_src tmate :window postgres
+\dt+
+#+end_src
+
+** Coder Iteration Loop
+*** Start Coder
 #+begin_src tmate :window coder :dir "../../.."
 
 cd ~/sharingio/coder
@@ -79,7 +104,7 @@ coder login `cat ~/.config/coderv2/url` -u ii -p ii -e ii@ii.nz
 
   Get started by creating a template:  coder templates init
 #+end_example
-** coder url
+*** coder url
 #+begin_src shell :dir "../../.."
 grep "coder login https://" coder-server.log | cut -d\  -f 4
 #+end_src
@@ -89,9 +114,8 @@ grep "coder login https://" coder-server.log | cut -d\  -f 4
 https://coder.bobymcbobs.pair.sharing.io
 #+end_example
 
-
-* kubevirt workspace
-** create template and cluster
+** kubevirt workspace
+*** create template and cluster
 
 #+begin_src tmate :dir "../../.." :window kubevirt
 cd ~/sharingio/coder
@@ -104,32 +128,14 @@ coder template create kubevirt-talos \
 coder create kv1 --template kubevirt-talos
 #+end_src
 
-** update template and new cluster
+*** update template and new cluster
 
 #+begin_src tmate :dir "../../.." :window kubevirt
 export WORKSPACE=kv1
 coder template push kubevirt-talos -d examples/templates/kubevirt-talos --yes
 coder create $WORKSPACE --template kubevirt-talos --parameter-file examples/templates/kubevirt/kubevirt.param.yaml --yes
 #+end_src
-* Embedded Postgres
-#+begin_src shell :wrap "src tmate :window postgres"
-coder server postgres-builtin-url
-#+end_src
-
-#+RESULTS:
-#+begin_src tmate :window postgres
- psql "postgres://coder@localhost:53292/coder?sslmode=disable&password=Zql9pOVipHvECfSJ"
-#+end_src
-
-#+begin_src tmate :window postgres
-\dt
-#+end_src
-
-#+begin_src tmate :window postgres
-\dt+
-#+end_src
-
-* Not that postgresql is installed
+** Not that postgresql is installed
 #+begin_src shell
 find  ~/Library/Application\ Support/coderv2/postgres | egrep -v 'data/|bin/'
 #+end_src
@@ -146,10 +152,9 @@ find  ~/Library/Application\ Support/coderv2/postgres | egrep -v 'data/|bin/'
 /Users/hh/Library/Application Support/coderv2/postgres/data
 #+end_example
 
+** Tear down
 
-* Tear down
-
-#+begin_src tmate :window kubevirt
-coder delete kv9
+#+begin_src tmate :window workspace
+coder delete ws1
 #+end_src
 
