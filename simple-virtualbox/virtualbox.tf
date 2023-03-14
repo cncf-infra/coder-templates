@@ -17,7 +17,6 @@ terraform {
 data "coder_workspace" "me" {}
 
 resource "local_file" "vagrant_file" {
-  count    = data.coder_workspace.me.transition == "start" ? 1 : 0
   filename = "/tmp/coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}/Vagrantfile"
   content = templatefile("Vagrantfile.template", {
     vbox_name = data.coder_workspace.me.name,
