@@ -17,7 +17,8 @@ terraform {
 data "coder_workspace" "me" {}
 
 resource "local_file" "vagrant_file" {
-  filename = "${path.module}/Vagrantfile"
+  count    = 1
+  filename = "/tmp/coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}/Vagrantfile"
   content = templatefile("Vagrantfile.template", {
     vbox_name = data.coder_workspace.me.name,
     gui       = "true",
@@ -38,6 +39,9 @@ resource "vagrant_vm" "my_vagrant_vm" {
   # https://developer.hashicorp.com/vagrant/docs/vagrantfile/machine_settings#config-vm-hostname
   # name (String) If the name changes, it will force terraform to destroy and recreate the resource. Defaults to "vagrantbox".
   name = data.coder_workspace.me.name
+
+  # I suspect it calls vagrant up from this folder
+  vagrantfile_dir = dirname(local_file.vagrant_file.filename)
 
   # get_ports (Boolean) Whether or not to retrieve forwarded port information.
   # See ports. Defaults to false.
