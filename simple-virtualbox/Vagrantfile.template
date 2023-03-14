@@ -1,0 +1,28 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "rshash/Ubuntu_22.04-M1-Mac"
+  config.vm.box_version = "0.1.0"
+  # config.vm.box = "bento/ubuntu-22.04"
+  # config.vm.box_version = "202212.11.0"
+  # config.vm.box = "bento/ubuntu-22.04"
+  # config.vm.box_version = "202212.11.0"
+  # config.vm.box = "kula/bullseye-arm64"
+  # config.vm.box_version = "11.20230201.1"
+  config.vm.post_up_message = "hello from coder!"
+  # https://developer.hashicorp.com/vagrant/docs/vagrantfile/machine_settings#config-vm-cloud_init
+  # config.vm.cloud_init = ""
+
+  # config.vm.box_download_checksum = ""
+  # https://developer.hashicorp.com/vagrant/docs/vagrantfile/machine_settings#config-vm-box_download_checksum
+  # https://developer.hashicorp.com/vagrant/docs/providers/virtualbox/configuration
+  config.vm.provider "virtualbox" do |v|
+    v.name = "${vbox_name}"
+    v.gui = ${gui}
+    v.memory = ${memory}
+    v.cpus = ${cpus}
+    # v.linked_clone = true
+    # v.check_guest_additions = false
+    # v.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+  end
+
+  config.vm.provision "shell", inline: "apt get update && apt get install tmux ttyd"
+end

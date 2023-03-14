@@ -7,8 +7,12 @@ curl -fsSL https://coder.com/install.sh | sh
 #+begin_src tmate :window server
 coder server
 #+end_src
+** Optional debugging
+https://developer.hashicorp.com/terraform/internals/debugging
+#+begin_src tmate :window server
+export TF_LOG=TRACE
+#+end_src
 * Create First User (new window)
-
 #+begin_src tmate :window "user"
 export CODER_FIRST_USER_EMAIL=coder@ii.coop
 export CODER_FIRST_USER_PASSWORD=iipasswordcoder
@@ -16,7 +20,6 @@ export CODER_FIRST_USER_TRIAL=true
 export CODER_FIRST_USER_USERNAME=ii
 coder login http://localhost:3000
 #+end_src
-
 * Possibly Create Other Admin Users
 #+begin_src tmate :window "user"
 export CODER_POSTGRES_URL=$(coder server postgres-builtin-url --raw-url)

@@ -1,0 +1,62 @@
+#+title: Virtualbox
+
+* Start Coder Server locally
+Recommend using TF_LOG=trace to see logs from terraform.
+https://developer.hashicorp.com/terraform/internals/debugging
+#+begin_src tmate :window server
+export TF_LOG=TRACE
+#+end_src
+Set default provider if it's not using the right one on your system.
+https://developer.hashicorp.com/vagrant/docs/providers/basic_usage#default-provider
+#+begin_src tmate :window server
+export VAGRANT_DEFAULT_PROVIDER=vmware_fusion
+#+end_src
+With those variables set, start *coder server*
+#+begin_src tmate :window server
+coder server
+#+end_src
+* Providers
+https://developer.hashicorp.com/vagrant/docs/providers/basic_usage#default-provider
+** Virtualbox
+https://developer.hashicorp.com/vagrant/docs/providers/virtualbox
+** VMWare Desktop/Fusion
+https://developer.hashicorp.com/vagrant/docs/providers/vmware
+*** vagrant plugin
+How do we handle vagrant plugins via terraform?
+#+begin_src tmate :window plugins
+vagrant plugin install vagrant-vmware-desktop
+#+end_src
+*** vagrant vmware utility
+https://developer.hashicorp.com/vagrant/downloads/vmware
+**** OSX
+https://formulae.brew.sh/cask/vagrant-vmware-utility
+#+begin_src tmate :window brew
+brew install --cask vagrant-vmware-utility
+#+end_src
+#+begin_src tmate :window brew
+sudo launchctl load -w /Library/LaunchDaemons/com.vagrant.vagrant-vmware-utility.plist
+#+end_src
+**** Linux
+#+begin_src shell
+curl -L -o vvu.zip https://releases.hashicorp.com/vagrant-vmware-utility/1.0.21/vagrant-vmware-utility_1.0.21_linux_amd64.zip
+unzip vvu.zip # Or something similar
+#+end_src
+** Docker
+https://developer.hashicorp.com/vagrant/docs/providers/docker
+* Footnotes
+** M1 Arm64 (M1/M2) Hosts Developer Preview Seems to work with Intel!
+https://www.virtualbox.org/wiki/Downloads
+*** But not really
+https://forums.virtualbox.org/viewtopic.php?f=8&t=107344
+** Research
+*** terra-farm Provider
+https://registry.terraform.io/providers/terra-farm/virtualbox/latest
+https://github.com/terra-farm/terraform-provider-virtualbox
+*** Maybe abandoned / HELP WANTED - SEPT 23 2021
+https://github.com/terra-farm/terraform-provider-virtualbox/discussions/117
+** bmatcuk Provider
+https://registry.terraform.io/providers/bmatcuk/vagrant/latest/docs
+** Cloud-init requires experimental
+https://developer.hashicorp.com/vagrant/docs/cloud-init/usage
+https://developer.hashicorp.com/vagrant/docs/experimental
+https://developer.hashicorp.com/vagrant/docs/cloud-init/configuration
