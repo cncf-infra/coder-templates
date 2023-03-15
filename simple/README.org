@@ -3,8 +3,22 @@
 #+begin_src tmate :window server
 curl -fsSL https://coder.com/install.sh | sh
 #+end_src
+* Optionally Install tmux and ttyd
+** OSX
+#+begin_src tmate :window server
+brew install tmux ttyd
+#+end_src
+** Debian / Ubuntu
+#+begin_src tmate :window server
+apt-get install -y tmux ttyd
+#+end_src
+* Optionally Install code-server
+#+begin_src tmate :window server
+curl -fsSL https://code-server.dev/install.sh | sh
+#+end_src
 * Start Coder Server locally
 #+begin_src tmate :window server
+unset TMUX
 coder server
 #+end_src
 ** Optional debugging
@@ -23,9 +37,9 @@ coder login http://localhost:3000
 * Possibly Create Other Admin Users
 #+begin_src tmate :window "user"
 export CODER_POSTGRES_URL=$(coder server postgres-builtin-url --raw-url)
-export CODER_USERNAME=hh
+export CODER_USERNAME=heyste
 export CODER_PASSWORD=iipasswordcoder
-export CODER_EMAIL=hh@ii.nz
+export CODER_EMAIL=stephen@ii.coop
 coder server create-admin-user
 #+end_src
 * create template
@@ -36,7 +50,7 @@ cd coder-templates/simple
 #+end_src
 ** From simple folder
 #+begin_src tmate :dir "." :window template
-coder template create simple -d . --yes
+coder template create --yes
 #+end_src
 
 * create workspace
@@ -85,6 +99,11 @@ coder server postgres-builtin-url
 
 #+begin_src tmate :window postgres
 \dt+
+#+end_src
+
+#+begin_src tmate :window postgres
+export PGDATA="$HOME/Library/Application Support/coderv2/postgres/data"
+~/Library/Application\ Support/coderv2/postgres/bin/bin/pg_ctl start
 #+end_src
 
 ** Coder Iteration Loop

@@ -40,7 +40,8 @@ resource "vagrant_vm" "my_vagrant_vm" {
   name = data.coder_workspace.me.name
 
   # I suspect it calls vagrant up from this folder
-  vagrantfile_dir = dirname(local_file.vagrant_file.filename)
+  vagrantfile_dir = data.coder_workspace.me.transition != "start" ? dirname(local_file.vagrant_file.filename) : "${path.module}"
+  # vagrantfile_dir = path.module
 
   # get_ports (Boolean) Whether or not to retrieve forwarded port information.
   # See ports. Defaults to false.
