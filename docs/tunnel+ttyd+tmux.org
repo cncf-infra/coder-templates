@@ -1,0 +1,27 @@
+#+title: Tunnel Ttyd Tmux
+
+* Install ttyd & tmux & wireguard-tools
+Do this the usual way for your platform
+* Run tmux and ttyd
+Feel free to add a specific socket etc to tmux.
+** tmux
+Run it detached for now
+#+begin_src shell
+tmux -L ii new -d
+#+end_src
+** ttyd
+The spawned shell should run *tmux at*
+#+begin_src shell
+ttyd -p 7681 tmux -L ii at
+#+end_src
+* Install tunnel
+https://github.com/coder/wgtunnel#usage
+#+begin_src tmate :window tunnel
+go install github.com/coder/wgtunnel/cmd/tunnel@v0.1.5
+#+end_src
+* Connect tunnel to ttyd
+#+begin_src shell
+export TUNNEL_WIREGUARD_KEY=$(wg genkey)
+export TUNNEL_API_URL=http://try.ii.nz
+~/go/bin/tunnel localhost:7681
+#+end_src
