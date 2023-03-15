@@ -92,7 +92,7 @@ resource "local_file" "coder_agent" {
     # https://linuxize.com/post/bash-redirect-stderr-stdout/
     # We also want to run in the background, so this script can exit
     # https://askubuntu.com/questions/88091/how-to-run-a-shell-script-in-background
-    command = "${self.filename} 2>&1 > coder-init.log &"
+    command = "(${self.filename} 2>&1 > coder-init.log) &"
   }
 
   # Similar to our create provisioner, but called on destroy (technically when count = 0)
