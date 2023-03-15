@@ -1,0 +1,30 @@
+#+title: Github Oauth for wgtunnel based coder server
+
+* Follow normal instructions for *coder server*
+The instructions there will give you a local run instance of coder, with a public url available via wgtunnel.
+(Usually just works, but you can host your own. Src at https://github.com/coder/wgtunnel#wgtunnel)
+You can find your url by visiting http://localhost:3000/settings/deployment/general and looking under *Access URL*.
+Mine for example is https://83i40cpcjt98e.try.ii.nz
+* Register a new OAuth application
+
+The [[https://coder.com/docs/v2/latest/admin/auth#github][Full Instructions]] are available, but here are my cliff notes:
+
+Visit https://github.com/settings/applications/new and fill out the following:
+- Application Name :: Hippie Hackers Personal Coder Instance
+- Homepage URL :: https://83i40cpcjt98e.try.ii.nz
+- Application description :: A shared workspace pair in the cloud.
+- Authorization callback URL :: https://83i40cpcjt98e.try.ii.nz/api/v2/users/oauth2/github/callback
+
+Optionally upload an Application logo.
+
+Copy your Client ID, then click on *Generate a new client secret*.
+Make sure to copy your new client secret now. You won’t be able to see it again.
+* Set OAUTH variables before starting *coder server*
+
+#+begin_src tmate :window server
+export CODER_OAUTH2_GITHUB_ALLOW_SIGNUPS=true
+export CODER_OAUTH2_GITHUB_ALLOWED_ORGS=ii,workshop-coop,vulk
+export CODER_OAUTH2_GITHUB_CLIENT_ID=fb5734aa38XXXX4d3626
+export CODER_OAUTH2_GITHUB_CLIENT_SECRET=4ecd24XXXX5d18128d1eef8f590bb3fd8941269e
+coder server
+#+end_src
