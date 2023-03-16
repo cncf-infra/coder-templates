@@ -15,8 +15,15 @@ The spawned shell should run *tmux at*
 ttyd -p 7681 tmux -L ii at
 #+end_src
 * Install tunnel
-https://github.com/coder/wgtunnel#usage
+** needs go 1.20+
 #+begin_src tmate :window tunnel
+GO_VERSION=1.20.2
+curl -sSL https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz | sudo tar --directory /usr/local --extract --ungzip
+#+end_src
+https://github.com/coder/wgtunnel#usage
+** And it needs to be in your path
+#+begin_src tmate :window tunnel
+export PATH=~/go/bin:/usr/local/go/bin:PATH
 go install github.com/coder/wgtunnel/cmd/tunnel@v0.1.5
 #+end_src
 * Connect tunnel to ttyd
