@@ -2,6 +2,10 @@
 
 * Install ttyd & tmux & wireguard-tools
 Do this the usual way for your platform
+** ubuntu
+#+begin_src shell
+apt-get install -y ttyd tmux wireguard-tools
+#+end_src
 * Run tmux and ttyd
 Feel free to add a specific socket etc to tmux.
 ** tmux
