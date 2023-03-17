@@ -16,7 +16,7 @@ tmux -L ii new -d
 ** ttyd
 The spawned shell should run *tmux at*
 #+begin_src shell
-ttyd -p 7681 tmux -L ii at
+ttyd -p 54321 tmux -L ii at
 #+end_src
 * Install tunnel
 ** needs go 1.20+
@@ -34,5 +34,5 @@ go install github.com/coder/wgtunnel/cmd/tunnel@v0.1.5
 #+begin_src shell
 export TUNNEL_WIREGUARD_KEY=$(wg genkey)
 export TUNNEL_API_URL=http://try.ii.nz
-~/go/bin/tunnel localhost:7681
+~/go/bin/tunnel localhost:54321
 #+end_src
