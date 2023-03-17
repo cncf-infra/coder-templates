@@ -4,7 +4,11 @@
 Do this the usual way for your platform
 ** ubuntu
 #+begin_src shell
-apt-get install -y ttyd tmux wireguard-tools
+sudo apt-get install -y ttyd tmux wireguard-tools curl
+#+end_src
+** osx
+#+begin_src shell
+drew install ttyd tmux wireguard-tools curl
 #+end_src
 * Run tmux and ttyd
 Feel free to add a specific socket etc to tmux.
@@ -20,6 +24,12 @@ ttyd -p 54321 tmux -L ii at
 #+end_src
 * Install tunnel
 ** needs go 1.20+
+*** M1 Mac
+#+begin_src tmate :window tunnel
+GO_VERSION=1.20.2
+curl -sSL https://dl.google.com/go/go${GO_VERSION}.darwin-arm64.tar.gz | sudo tar --directory /usr/local --extract --ungzip
+#+end_src
+*** Linux AMD64
 #+begin_src tmate :window tunnel
 GO_VERSION=1.20.2
 curl -sSL https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz | sudo tar --directory /usr/local --extract --ungzip
