@@ -61,4 +61,4 @@ rm -rf $GO_TMP_DIR
 tmux -V
 ttyd --version
 wg version
-tunnel --version
+/usr/local/bin/tunnel --version

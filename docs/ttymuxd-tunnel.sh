@@ -53,6 +53,8 @@ disown
 
 echo ttyd logs are available in $TTYD_LOGFILE
 
+export PATH=/usr/local/bin:$PATH
+# We install to /usr/local/bin... but on OSX it's not in the path by default
 tunnel localhost:54321 2>&1 > $TUNNEL_LOGFILE &
 
 echo tunnel logs are available in $TTYD_LOGFILE
