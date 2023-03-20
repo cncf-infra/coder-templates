@@ -27,11 +27,15 @@ case $ACTION in
       tmux -L ii has-session -t ii
       tmux -L ii list-windows -t ii
       # Display how to connect to ttyd
-      ps -p $(cat $TTYDMUX_DIR/ttyd.pid) 2>&1 > /dev/null && \
+      if [[ -e $TTYDMUX_DIR/ttyd.pid ]]
+      then ps -p $(cat $TTYDMUX_DIR/ttyd.pid) 2>&1 > /dev/null && \
         echo Connect to ttyd locally via http://localhost:54321
+      fi
       # Display how to connect to tunnel
-      ps -p $(cat $TTYDMUX_DIR/tunnel.pid) 2>&1 > /dev/null && \
-          grep "You can now connect" $HOME/.config/ttydmux/tunnel.log
+      if [[ -e $TTYDMUX_DIR/tunnel.pid ]]
+      then ps -p $(cat $TTYDMUX_DIR/tunnel.pid) 2>&1 > /dev/null && \
+        grep "You can now connect" $HOME/.config/ttydmux/tunnel.log
+      fi
       # Display how to connect to tmux directly
       tmux -L ii has-session -t ii && \
         echo Connect to tmux locally via: &&\
@@ -49,11 +53,17 @@ case $ACTION in
     tunnel localhost:54321 2>&1 > $TUNNEL_LOGFILE &
     echo $! > $TTYDMUX_DIR/tunnel.pid
     echo tunnel logs are available in $TTYD_LOGFILE
+    echo Connect to tmux locally via: &&\
+    echo tmux -L ii at
   ;;
   stop)
     # we won't stop tmux... let's leave it
-    kill `cat $TTYDMUX_DIR/ttyd.pid`
-    kill `cat $TTYDMUX_DIR/tunnel.pid`
+    if [[ -e $TTYDMUX_DIR/ttyd.pid ]]
+    then kill `cat $TTYDMUX_DIR/ttyd.pid` && rm $TTYDMUX_DIR/ttyd.pid
+    fi
+    if [[ -e $TTYDMUX_DIR/tunnel.pid ]]
+    then kill `cat $TTYDMUX_DIR/tunnel.pid` && rm $TTYDMUX_DIR/tunnel.pid
+    fi
   ;;
 esac
 

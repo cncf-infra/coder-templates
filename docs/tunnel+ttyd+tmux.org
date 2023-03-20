@@ -5,7 +5,7 @@
 curl -LO https://raw.githubusercontent.com/cncf-infra/coder-templates/main/docs/ttymuxd-setup.sh
 bash ttymuxd-setup.sh
 #+end_src
-* Install ttymuxd-tunnel.sh
+* Install ttymuxd into /usr/local/bin/ttydmux
 #+begin_src shell
 curl -LO https://raw.githubusercontent.com/cncf-infra/coder-templates/main/docs/ttymuxd-tunnel.sh
 mv ttymuxd-tunnel.sh /usr/local/bin/ttydmux
