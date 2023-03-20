@@ -27,7 +27,7 @@ ttyd -p 54321 tmux -L ii at
 *** M1 Mac
 #+begin_src tmate :window tunnel
 GO_VERSION=1.20.2
-curl -sSL https://dl.google.com/go/go${GO_VERSION}.darwin-arm64.tar.gz | sudo tar --directory /usr/local --extract --ungzip
+curl -sSL https://dl.google.com/go/go${GO_VERSION}.darwin-arm64.tar.gz | gunzip -d | sudo tar --directory /usr/local --extract
 #+end_src
 *** Linux AMD64
 #+begin_src tmate :window tunnel
@@ -36,13 +36,31 @@ curl -sSL https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz | sudo tar
 #+end_src
 https://github.com/coder/wgtunnel#usage
 ** And it needs to be in your path
+You could run this OR add this to your last line of *~/.bashrc* or *~/.zshrc*
 #+begin_src tmate :window tunnel
-export PATH=~/go/bin:/usr/local/go/bin:PATH
+export PATH=~/go/bin:/usr/local/go/bin:$PATH
+#+end_src
+This command will add it t othe last line of *~/.bashrc*, run it once and start a new shell.
+#+begin_src tmate :window tunnel
+echo 'export PATH=~/go/bin:/usr/local/go/bin:$PATH' >> ~/.bashrc
+#+end_src
+
+#+begin_src shell
+which go
+#+end_src
+
+#+RESULTS:
+#+begin_example
+/usr/local/go/bin/go
+#+end_example
+
+** And it needs to be in your path
+#+begin_src tmate :window tunnel
 go install github.com/coder/wgtunnel/cmd/tunnel@v0.1.5
 #+end_src
 * Connect tunnel to ttyd
 #+begin_src shell
 export TUNNEL_WIREGUARD_KEY=$(wg genkey)
 export TUNNEL_API_URL=http://try.ii.nz
-~/go/bin/tunnel localhost:54321
+tunnel localhost:54321
 #+end_src

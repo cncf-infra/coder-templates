@@ -1,0 +1,62 @@
+#+title: Notes
+
+* Notes for Ubuntu
+Your user needs to be part of the docker group to access the socket
+
+If `docker ps` gives an error about permissions, you need to ensure you have read/write access to the docker socket.
+
+#+begin_src shell
+sudo usermodd -Ag docker $USER
+#+end_src
+* If you want to set your default WSL2
+#+begin_src shell
+wsl --set-default Ubuntu-22.04
+#+end_src
+* drpc
+#+begin_example
+hh@Max coder % make
+protoc-gen-go-drpc: program not found or is not executable
+Please specify a program using absolute path or make sure the program is available in your PATH system variable
+--go-drpc_out: protoc-gen-go-drpc: Plugin failed with status code 1.
+make: *** [Makefile:478: provisionersdk/proto/provisioner.pb.go] Error 1
+#+end_example
+
+#+begin_src shell
+go install storj.io/drpc/cmd/protoc-gen-go-drpc
+#+end_src
+* sqlc
+#+begin_example
+hh@Max coder % make
+generate
+./coderd/database/generate.sh: line 21: sqlc: command not found
+make: *** [Makefile:475: coderd/database/querier.go] Error 127
+#+end_example
+#+begin_src shell
+brew install sqlc
+#+end_src
+* protoc
+#+begin_example
+bash: line 2: protoc: command not found
+make: *** [Makefile:478: provisionersdk/proto/provisioner.pb.go] Error 127
+Installed protoc from apt.
+protoc-gen-go: program not found or is not executable
+Please specify a program using absolute path or make sure the program is available in your PATH system variable
+--go_out: protoc-gen-go: Plugin failed with status code 1.
+make: *** [Makefile:478: provisionersdk/proto/provisioner.pb.go] Error 1
+Installed plugin from Go
+protoc-gen-go-drpc: program not found or is not executable
+Please specify a program using absolute path or make sure the program is available in your PATH system variable
+--go-drpc_out: protoc-gen-go-drpc: Plugin failed with status code 1.
+make: *** [Makefile:478: provisionersdk/proto/provisioner.pb.go] Error 1
+#+end_example
+
+#+begin_src shell
+apt install -y protobuf-compiler
+protoc --version  # Ensure compiler version is 3+
+#+end_src
+#+begin_src shell
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+#+end_src
+* READY
+plb06Gwt
+pin 3255
