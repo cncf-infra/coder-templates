@@ -4,6 +4,7 @@ set -e
 
 case $(uname -o) in
   GNU/Linux)
+    sudo apt-get update
     sudo apt-get install -y ttyd tmux wireguard-tools curl
     export OS=linux
   ;;
