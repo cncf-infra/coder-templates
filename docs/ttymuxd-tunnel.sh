@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-
+# set -xe # Enable for debug
 # Shoule we persist logs / config in $HOME/.config/ttydmux/ ?
-export TTYDMUX_DIR=$(mktemp -t ttydmux -d)
+export TTYDMUX_DIR=$HOME/.config/ttydmux
+mkdir -p $TTYDMUX_DIR
 # Logfiles collect both stderr and stdout from ttyd and tunnel
 export TTYD_LOGFILE=$TTYDMUX_DIR/ttyd.log
-export TUNNEL_LOGFILE=$TTYDMUX_DIR/ttyd.log
+export TUNNEL_LOGFILE=$TTYDMUX_DIR/tunnel.log
 
 # Possibly presist this...
 # https://www.man7.org/linux/man-pages/man8/wg.8.html#COMMANDS
@@ -14,6 +15,57 @@ export TUNNEL_LOGFILE=$TTYDMUX_DIR/ttyd.log
 export TUNNEL_WIREGUARD_KEY=$(wg genkey)
 export TUNNEL_API_URL=http://try.ii.nz
 
+# We install to /usr/local/bin... but on OSX it's not in the path by default
+export PATH=/usr/local/bin:$PATH
+
+# Usage ttydmux [start|stop]
+ACTION=${1:-status}
+case $ACTION in
+  status)
+      # List information about tmux
+      tmux -L ii list-sessions
+      tmux -L ii has-session -t ii
+      tmux -L ii list-windows -t ii
+      # Display how to connect to ttyd
+      ps -p $(cat $TTYDMUX_DIR/ttyd.pid) 2>&1 > /dev/null && \
+        echo Connect to ttyd locally via http://localhost:54321
+      # Display how to connect to tunnel
+      ps -p $(cat $TTYDMUX_DIR/tunnel.pid) 2>&1 > /dev/null && \
+          grep "You can now connect" $HOME/.config/ttydmux/tunnel.log
+      # Display how to connect to tmux directly
+      tmux -L ii has-session -t ii && \
+        echo Connect to tmux locally via: &&\
+        echo tmux -L ii at
+  ;;
+  start)
+    if $(tmux -L ii has-session -t ii)
+    then echo "tmux session exists!"
+    else tmux -L ii new -d -c $HOME -e TTYDMUX=true -s ii
+    echo $! > $TTYDMUX_DIR/tmux.pid
+    fi
+    ttyd -p 54321 tmux -L ii at 2>&1 > $TTYD_LOGFILE &
+    echo $! > $TTYDMUX_DIR/ttyd.pid
+    echo ttyd logs are available in $TTYD_LOGFILE
+    tunnel localhost:54321 2>&1 > $TUNNEL_LOGFILE &
+    echo $! > $TTYDMUX_DIR/tunnel.pid
+    echo tunnel logs are available in $TTYD_LOGFILE
+  ;;
+  stop)
+    # we won't stop tmux... let's leave it
+    kill `cat $TTYDMUX_DIR/ttyd.pid`
+    kill `cat $TTYDMUX_DIR/tunnel.pid`
+  ;;
+esac
+
+# Relevant docs for ttyd
+# https://manpages.ubuntu.com/manpages/impish/man1/ttyd.1.html#options
+#  -p, --port <port>
+#    Port to listen (default: 7681, use 0 for random port)
+# ii tmux sessions are export with ttyd on port 54321
+
+
+# Relevant Docs for tmux
+# https://man7.org/linux/man-pages/man1/tmux.1.html
 # Possibly use a temp folder for files / logs
 # Background tmux with -L ii for the session
 #
@@ -42,19 +94,3 @@ export TUNNEL_API_URL=http://try.ii.nz
 #     The new session is attached to the current terminal unless
 #      -d is given.  window-name and shell-command are the name of
 #      and shell command to execute in the initial window.
-tmux -L ii new -d -c $HOME -e TTYDMUX=true -n ii -s ii
-
-# https://manpages.ubuntu.com/manpages/impish/man1/ttyd.1.html#options
-#  -p, --port <port>
-#    Port to listen (default: 7681, use 0 for random port)
-# ii tmux sessions are export with ttyd on port 54321
-ttyd -p 54321 tmux -L ii at 2>&1 > $TTYD_LOGFILE &
-disown
-
-echo ttyd logs are available in $TTYD_LOGFILE
-
-export PATH=/usr/local/bin:$PATH
-# We install to /usr/local/bin... but on OSX it's not in the path by default
-tunnel localhost:54321 2>&1 > $TUNNEL_LOGFILE &
-
-echo tunnel logs are available in $TTYD_LOGFILE
