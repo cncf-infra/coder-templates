@@ -9,4 +9,5 @@ bash ttymuxd-setup.sh
 #+begin_src shell
 curl -LO https://raw.githubusercontent.com/cncf-infra/coder-templates/main/docs/ttymuxd-tunnel.sh
 mv ttymuxd-tunnel.sh /usr/local/bin/ttydmux
+chmod +x /usr/local/bin/ttydmux
 #+end_src

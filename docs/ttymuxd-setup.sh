@@ -21,6 +21,9 @@ case $(uname -m) in
   amd64)
     export ARCH=amd64
   ;;
+  x86_64)
+    export ARCH=amd64
+  ;;
 esac
 
 # We need tunnel client for now
