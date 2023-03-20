@@ -3,7 +3,7 @@ set -x
 set -e
 
 case $(uname -o) in
-  Linux)
+  GNU/Linux)
     sudo apt-get install -y ttyd tmux wireguard-tools curl
     export OS=linux
   ;;
