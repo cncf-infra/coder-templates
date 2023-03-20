@@ -53,11 +53,12 @@ curl -sSL https://dl.google.com/go/go${GO_VERSION}.${OS}-${ARCH}.tar.gz \
 # GO
 export PATH=$GO_TMP_DIR/go/bin:$PATH
 go install github.com/coder/wgtunnel/cmd/tunnel@v0.1.5
+# Move generated tunnel go binary to /usr/local/bin
+sudo mv $HOME/go/bin/tunnel /usr/local/bin/tunnel
 rm -rf $GO_TMP_DIR
 
 # WHAT WE NEED
 tmux -V
 ttyd --version
 wg version
-export PATH=$HOME/go/bin:$PATH
 tunnel --version
