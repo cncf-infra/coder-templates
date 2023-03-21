@@ -31,8 +31,13 @@ generate
 ./coderd/database/generate.sh: line 21: sqlc: command not found
 make: *** [Makefile:475: coderd/database/querier.go] Error 127
 #+end_example
+** osx
 #+begin_src shell
 brew install sqlc
+#+end_src
+** linux
+#+begin_src shell
+go install github.com/kyleconroy/sqlc/cmd/sqlc@latest
 #+end_src
 * protoc
 #+begin_example
@@ -65,4 +70,30 @@ python3 -m http.server &
 export TUNNEL_WIREGUARD_KEY=$(wg genkey)
 export TUNNEL_API_URL=http://try.ii.nz
 ~/go/bin/tunnel 127.0.0.1:8000
+#+end_src
+** checking out a branch / pr from coder
+#+begin_src shell
+ git clone http://github.com/coder/coder
+ git checkout -b tunnelsdk origin/dean/tunnelsdk
+#+end_src
+* coder build needs yarn
+#+begin_example
+/coder$ make
++ yarn install
+./scripts/yarn_install.sh: line 41: yarn: command not found
+make: *** [Makefile:359: site/out/index.html] Error 127
+#+end_example
+#+begin_src shell
+sudo apt-get install yarn
+#+end_src
+* Coder build doesn't work
+#+begin_example
+/coder$ make
+generate
+# package database
+dump.sql:1:1: the PostgreSQL engine requires cgo. Please set CGO_ENABLED=1.
+make: *** [Makefile:475: coderd/database/querier.go] Error 1
+#+end_example
+#+begin_src shell
+make gen/mark-fresh
 #+end_src

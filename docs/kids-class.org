@@ -1,0 +1,18 @@
+#+title: Kids Class
+
+* NOVNC on Debian
+** check out the source
+#+begin_src tmate :window consol
+cd $HOME
+git clone git@github.com:ConSol/docker-headless-vnc-container.git
+cd docker-headless-vnc-container
+#+end_src
+** build the container
+#+begin_src tmate :window consol
+make build-kids-container
+#+end_src
+** run the container
+#+begin_src tmate :window consol
+make run-kids-container
+#+end_src
+* Make changes to Makefile & Dockerfile.kids-container as necessary
