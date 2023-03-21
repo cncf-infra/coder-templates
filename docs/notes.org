@@ -57,6 +57,12 @@ protoc --version  # Ensure compiler version is 3+
 #+begin_src shell
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 #+end_src
-* READY
-plb06Gwt
-pin 3255
+* python can be used with tunnel to serve up files to anyone easily
+`cd` to the folder you want to server up via http and share with neighbors.
+If you want to have the same / persistent url, save your `wg keygen` output.
+#+begin_src shell
+python3 -m http.server &
+export TUNNEL_WIREGUARD_KEY=$(wg genkey)
+export TUNNEL_API_URL=http://try.ii.nz
+~/go/bin/tunnel 127.0.0.1:8000
+#+end_src
